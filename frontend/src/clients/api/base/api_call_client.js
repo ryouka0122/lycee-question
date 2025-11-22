@@ -31,10 +31,10 @@ const axiosClient = (function() {
   const headers = {
     "Content-Type": "application/json"
   }
-  headers[HEADER_KEY.API_KEY] = process.env.VUE_APP_QES_API_KEY
+  headers[HEADER_KEY.API_KEY] = import.meta.env.VUE_APP_QES_API_KEY
 
   return axios.create({
-    baseURL: process.env.VUE_APP_API_BASE_URL,
+    baseURL: import.meta.env.VUE_APP_API_BASE_URL,
     headers: headers
   })
 })()
