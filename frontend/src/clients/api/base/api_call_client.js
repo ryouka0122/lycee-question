@@ -1,6 +1,7 @@
 import axios from 'axios'
 import ApiClient from '@/clients/api/base/api_client'
 import { HEADER_KEY } from '@/constants'
+import {AppConfig} from "@/config/env";
 
 class ApiCallClient extends ApiClient {
   client
@@ -31,10 +32,10 @@ const axiosClient = (function() {
   const headers = {
     "Content-Type": "application/json"
   }
-  headers[HEADER_KEY.API_KEY] = import.meta.env.VUE_APP_QES_API_KEY
+  headers[HEADER_KEY.API_KEY] = AppConfig.qesApiKey
 
   return axios.create({
-    baseURL: import.meta.env.VUE_APP_API_BASE_URL,
+    baseURL: AppConfig.apiBaseUrl,
     headers: headers
   })
 })()

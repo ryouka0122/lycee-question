@@ -1,5 +1,6 @@
 import Stomp from 'stomp-websocket'
 import { HEADER_KEY } from '@/constants'
+import {AppConfig} from "@/config/env";
 
 // 質問追加通知
 const endpointNoticeQuestion = "/notice/question/"
@@ -44,7 +45,7 @@ class LiveClient {
     this.webSocketHeader[HEADER_KEY.USER_ID] = this.userId
     this.webSocketHeader[HEADER_KEY.SPACE_ID] = this.spaceId
 
-    const endpoint = import.meta.env.VUE_APP_WEBSOCKET_ENDPOINT
+    const endpoint = AppConfig.websocketEndpoint
     if (endpoint.startsWith("ws://") || endpoint.startsWith("wss://")) {
       // プロトコルから指定されているときはそのまま使う
       this.webSocketEndpoint = endpoint
