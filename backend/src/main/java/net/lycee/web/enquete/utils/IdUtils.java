@@ -11,29 +11,24 @@ import java.util.UUID;
 @Component
 public class IdUtils {
 
-    private synchronized static String issueIdInternal() {
-        return UUID.randomUUID().toString();
+    private synchronized static UUID issueIdInternal() {
+        return UUID.randomUUID();
     }
 
     public UserId publishUserId() {
-        String uuid = issueIdInternal();
-
-        return new UserId(uuid);
+        return new UserId(issueIdInternal());
     }
 
     public SpaceId publishSpaceId() {
-        String id = issueIdInternal();
-        return new SpaceId(id);
+        return new SpaceId(issueIdInternal());
     }
 
     public QuestionId publishQuestionId() {
-        String id = issueIdInternal();
-        return new QuestionId(id);
+        return new QuestionId(issueIdInternal());
     }
 
     public AnswerId publishAnswerId() {
-        String id = issueIdInternal();
-        return new AnswerId(id);
+        return new AnswerId(issueIdInternal());
     }
 
 }

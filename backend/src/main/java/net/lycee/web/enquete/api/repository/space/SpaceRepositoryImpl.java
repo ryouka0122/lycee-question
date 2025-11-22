@@ -28,8 +28,8 @@ public class SpaceRepositoryImpl implements SpaceRepository {
     @Override
     public void insert(SpaceEntity entity) {
         spaceMapper.insert(new QesSpace(
-                entity.getId().value(),
-                entity.getOwnerId().value(),
+                entity.getId(),
+                entity.getOwnerId(),
                 entity.getName(),
                 entity.getOpenedTime(),
                 entity.getCloseTime()
@@ -38,11 +38,11 @@ public class SpaceRepositoryImpl implements SpaceRepository {
 
     @Override
     public boolean checkOpened(SpaceId spaceId, long currentTime) {
-        return spaceMapper.selectByPKAndTime(spaceId.value(), currentTime) != null;
+        return spaceMapper.selectByPKAndTime(spaceId.toString(), currentTime) != null;
     }
 
     @Override
     public void join(UserId userId, SpaceId spaceId) {
-        spaceMapper.insertJoin(userId.value(), spaceId.value());
+        spaceMapper.insertJoin(userId.toString(), spaceId.toString());
     }
 }

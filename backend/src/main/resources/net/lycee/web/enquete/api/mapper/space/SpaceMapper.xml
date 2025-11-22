@@ -44,7 +44,7 @@
             OPENED_TIME,
             END_TIME
         ) VALUES (
-            #{entity.spaceId},
+            #{entity.spaceId, jdbcType=OTHER},
             #{entity.ownerId},
             #{entity.name},
             #{entity.openedTime},

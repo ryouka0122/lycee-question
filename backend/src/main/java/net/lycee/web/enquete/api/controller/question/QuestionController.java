@@ -95,7 +95,7 @@ public class QuestionController {
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", questionId.value())
+                .header("Location", questionId.toString())
                 .body(null);
     }
 

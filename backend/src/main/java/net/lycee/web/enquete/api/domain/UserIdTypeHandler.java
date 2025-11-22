@@ -2,6 +2,7 @@ package net.lycee.web.enquete.api.domain;
 
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
+import org.apache.ibatis.type.MappedJdbcTypes;
 import org.apache.ibatis.type.MappedTypes;
 
 import java.sql.CallableStatement;
@@ -10,11 +11,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @MappedTypes(UserId.class)
+@MappedJdbcTypes({JdbcType.OTHER})
 public class UserIdTypeHandler extends BaseTypeHandler<UserId> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, UserId parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, parameter.value());
+        ps.setObject(i, parameter.value());
     }
 
     @Override
@@ -23,7 +25,7 @@ public class UserIdTypeHandler extends BaseTypeHandler<UserId> {
         if (value == null) {
             return null;
         }
-        return new UserId(value);
+        return UserId.fromString(value);
     }
 
     @Override
@@ -32,7 +34,7 @@ public class UserIdTypeHandler extends BaseTypeHandler<UserId> {
         if (value == null) {
             return null;
         }
-        return new UserId(value);
+        return UserId.fromString(value);
     }
 
     @Override
@@ -41,6 +43,6 @@ public class UserIdTypeHandler extends BaseTypeHandler<UserId> {
         if (value == null) {
             return null;
         }
-        return new UserId(value);
+        return UserId.fromString(value);
     }
 }

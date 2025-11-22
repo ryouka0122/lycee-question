@@ -15,7 +15,7 @@ public class QuestionIdTypeHandler extends BaseTypeHandler<QuestionId> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, QuestionId parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, parameter.value());
+        ps.setString(i, parameter.value().toString());
     }
 
     @Override
@@ -24,7 +24,7 @@ public class QuestionIdTypeHandler extends BaseTypeHandler<QuestionId> {
         if (value == null) {
             return null;
         }
-        return new QuestionId(value);
+        return QuestionId.fromString(value);
     }
 
     @Override
@@ -33,7 +33,7 @@ public class QuestionIdTypeHandler extends BaseTypeHandler<QuestionId> {
         if (value == null) {
             return null;
         }
-        return new QuestionId(value);
+        return QuestionId.fromString(value);
     }
 
     @Override
@@ -42,6 +42,6 @@ public class QuestionIdTypeHandler extends BaseTypeHandler<QuestionId> {
         if (value == null) {
             return null;
         }
-        return new QuestionId(value);
+        return QuestionId.fromString(value);
     }
 }

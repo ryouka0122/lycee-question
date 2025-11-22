@@ -8,10 +8,10 @@ public class TokenService {
 
 
     public String convertToToken(UserId userId) {
-        return userId.value();
+        return userId.toString();
     }
 
     public UserId convertToId(String token) {
-        return new UserId(token);
+        return UserId.fromString(token);
     }
 }
