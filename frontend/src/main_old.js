@@ -1,9 +1,9 @@
 import { createApp } from 'vue'
-import App from './App.vue'
+import App from './App1.vue'
 import vuetify from './plugins/vuetify'
 import { loadFonts } from './plugins/webfontloader'
 import MultiDialogView from '@/components/sample/MultiDialogView'
-import router from '@/plugins/router'
+import router from '@/router'
 
 loadFonts()
 

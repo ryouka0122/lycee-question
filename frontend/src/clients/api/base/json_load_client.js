@@ -14,7 +14,7 @@ class JsonLoadClient extends ApiClient {
     this.userId = userId
   }
 
-  // eslint-disable-next-line no-unused-vars
+
   #request(method, endpoint, params) {
     const path = this.createJsonPath(endpoint, method +  ".json")
     return this.client.get("/" + path)
@@ -49,14 +49,14 @@ class JsonLoadClient extends ApiClient {
 
 // ローカル開発モードでのaxios設定
 const axiosClient = axios.create({
-  baseURL: process.env.VUE_APP_API_BASE_URL,
+  baseURL: import.meta.env.VUE_APP_API_BASE_URL,
   headers: {
     "Content-Type": "application/json"
   }
 })
 
 function createApiClient(hook) {
-  return new JsonLoadClient(axiosClient, hook, process.env.VUE_APP_DUMMY_USER_ID)
+  return new JsonLoadClient(axiosClient, hook, import.meta.env.VUE_APP_DUMMY_USER_ID)
 }
 
 export {

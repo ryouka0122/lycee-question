@@ -44,7 +44,7 @@ class LiveClient {
     this.webSocketHeader[HEADER_KEY.USER_ID] = this.userId
     this.webSocketHeader[HEADER_KEY.SPACE_ID] = this.spaceId
 
-    const endpoint = process.env.VUE_APP_WEBSOCKET_ENDPOINT
+    const endpoint = import.meta.env.VUE_APP_WEBSOCKET_ENDPOINT
     if (endpoint.startsWith("ws://") || endpoint.startsWith("wss://")) {
       // プロトコルから指定されているときはそのまま使う
       this.webSocketEndpoint = endpoint

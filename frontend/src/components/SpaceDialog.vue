@@ -17,8 +17,8 @@
               :history="history[question.id] || {}"
             ></question-result-cell>
             <question-register-cell
-              v-model="registerExpanded"
               ref="registerCell"
+              v-model="registerExpanded"
               @register="onRegister"
             ></question-register-cell>
           </template>
@@ -38,11 +38,11 @@
         <v-container>
           <v-row>
             <v-btn
+              v-if="isOwner"
               variant="text"
               color="red"
               prepend-icon="mdi-qrcode"
               @click="onClickQr"
-              v-if="isOwner"
             >
              QRコード
             </v-btn>
@@ -51,8 +51,8 @@
               variant="text"
               color="green"
               prepend-icon="mdi-reload"
-              @click="onClickReload"
               style="margin-right: 20px"
+              @click="onClickReload"
             >
               再読み込み
             </v-btn>
@@ -72,32 +72,32 @@
 </template>
 
 <script>
-import LyceeMessageDialog from '@/components/common/LyceeMessageDialog'
-import QuestionCell from '@/components/QuestionCell'
-import { LiveClient } from '@/clients/websocket/LiveClient'
+import { QUESTION_TYPE } from '@/constants'
 import { getUserId } from '@/utils'
+import { LiveClient } from '@/clients/websocket/LiveClient'
 import { SpaceClient } from '@/clients/api/SpaceClient'
-import QuestionRegisterCell from '@/components/QuestionRegisterCell'
 import { QuestionClient } from '@/clients/api/QuestionClient'
 import { QuestionEntity } from '@/entity/QuestionEntity'
-import { QUESTION_TYPE } from '@/constants'
 import { AnswerClient } from '@/clients/api/AnswerClient'
-import QuestionResultCell from '@/components/QuestionResultCell'
-import QrcodeDialog from '@/components/QrcodeDialog'
+import QuestionCell from '@/components/QuestionCell.vue'
+import QuestionRegisterCell from '@/components/QuestionRegisterCell.vue'
+import QuestionResultCell from '@/components/QuestionResultCell.vue'
+import QrcodeDialog from '@/components/QrcodeDialog.vue'
+import LyceeMessageDialog from '@/components/common/LyceeMessageDialog.vue'
 
 
 export default {
   name: 'SpaceDialog',
   components: { QuestionResultCell, QuestionRegisterCell, QuestionCell },
-  emits: [
-    "close", "update-icon"
-  ],
   inject: [
     "showDialog"
   ],
   props: {
     spaceId: { type: String, required: true }
   },
+  emits: [
+    "close", "update-icon"
+  ],
   data() {
     return {
       /* ユーザ情報 */
@@ -272,7 +272,7 @@ export default {
         })
 
         const history = {}
-        for (let answer of answers.data.history) {
+        for (const answer of answers.data.history) {
           history[answer.questionId] = answer.answers
         }
         this.history = history

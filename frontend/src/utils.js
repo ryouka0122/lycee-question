@@ -31,8 +31,8 @@ function getFixedDate(fixedDate) {
   return () => Date.parse(fixedDate)
 }
 
-const _getCurrentDate = (hasAvailableValue(process.env, "VUE_APP_FIXED_DATE"))
-  ? getFixedDate(process.env.VUE_APP_FIXED_DATE) : getRealDate
+const _getCurrentDate = (hasAvailableValue(import.meta.env, "VUE_APP_FIXED_DATE"))
+  ? getFixedDate(import.meta.env.VUE_APP_FIXED_DATE) : getRealDate
 
 export function getCurrentDate() {
   return _getCurrentDate()

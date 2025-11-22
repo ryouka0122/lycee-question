@@ -8,7 +8,12 @@ const envClientList = {
   api: apiCall_createApiClient
 }
 
-const _createApiClient = envClientList[process.env.VUE_APP_API_MODE]
+const _createApiClient = (function () {
+  if ("VUE_APP_API_MODE" in import.meta.env) {
+    return envClientList[import.meta.env.VUE_APP_API_MODE];
+  }
+  return apiCall_createApiClient;
+})();
 
 export {
   _createApiClient as createApiClient

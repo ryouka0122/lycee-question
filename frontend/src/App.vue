@@ -1,4 +1,49 @@
+<script setup lang="ts">
+
+import LyceeModalDialog from "@/components/common/dialog/LyceeModalDialog.vue";
+import {type Component, markRaw, provide, ref} from "vue";
+
+type DialogProperty = {
+  title: string
+  persistent: boolean
+  fullScreen: boolean
+  iconUse: boolean
+  props: object
+  show: boolean
+  onClose: (v: unknown) => void
+  dialog: Component
+}
+
+const dialogStack = ref<DialogProperty[]>([]);
+
+function showDialog(comp: DialogProperty) {
+  // フォーカスが当たっていたら外す
+  (document.activeElement as HTMLElement)?.blur?.()
+
+  // ダイアログ表示処理
+  return new Promise(resolve => {
+    comp.show = true
+    comp.onClose = resolve
+    comp.dialog = markRaw(comp.dialog)
+    dialogStack.value.push(comp)
+  });
+}
+
+function closeDialog(index: number, event: Event) {
+  const [deleted] = dialogStack.value.splice(index, 1)
+  if (deleted?.onClose) {
+    deleted.onClose(event)
+  }
+}
+
+
+provide("showDialog", showDialog);
+
+</script>
+
+
 <template>
+
   <v-app>
     <router-view></router-view>
 
@@ -24,46 +69,6 @@
   </v-app>
 </template>
 
-<script>
+<style scoped>
 
-import TestView from '@/components/sample/TestView'
-import LyceeModalDialog from '@/components/common/dialog/LyceeModalDialog'
-import SpaceList from '@/components/SpaceList'
-import { markRaw } from 'vue'
-
-export default {
-  name: 'App',
-  components: { SpaceList, LyceeModalDialog, TestView },
-  data() {
-    return {
-      dialogStack: [],
-    }
-  },
-  methods: {
-    showDialog(comp) {
-      if (window.activeElement) {
-        window.activeElement.blur()
-      }
-      return new Promise(resolve => {
-        comp.show = true
-        comp.onClose = resolve
-        comp.dialog = markRaw(comp.dialog)
-        this.dialogStack.push(comp)
-      })
-    },
-
-    closeDialog(index, event) {
-      const [deleted] = this.dialogStack.splice(index, 1)
-      if (deleted.onClose) {
-        deleted.onClose(event)
-      }
-    }
-  },
-  provide() {
-    return {
-      showDialog: this.showDialog
-    }
-  }
-
-}
-</script>
+</style>

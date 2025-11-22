@@ -12,8 +12,9 @@
 
       <v-list-item>
         <v-container>
-          <v-card @click="showOpenSpaceDialog"
-            title="スペースの新規追加">
+          <v-card
+title="スペースの新規追加"
+            @click="showOpenSpaceDialog">
           </v-card>
         </v-container>
       </v-list-item>
@@ -22,14 +23,14 @@
 </template>
 
 <script>
-import SpaceCard from '@/components/SpaceCard'
+import SpaceCard from '@/components/SpaceCard.vue'
 import {SpaceEntity} from '@/entity/SpaceEntity'
-import OpenSpaceDialog from '@/components/OpenSpaceDialog'
-import SpaceDialog from '@/components/SpaceDialog'
+import OpenSpaceDialog from '@/components/OpenSpaceDialog.vue'
+import SpaceDialog from '@/components/SpaceDialog.vue'
 import { SpaceClient } from '@/clients/api/SpaceClient'
 import * as util from '@/utils'
 import { BackdoorClient } from '@/clients/api/BackdoorClient'
-import LyceeMessageDialog from '@/components/common/LyceeMessageDialog'
+import LyceeMessageDialog from '@/components/common/LyceeMessageDialog.vue'
 
 export default {
   name: 'SpaceList',
@@ -71,7 +72,7 @@ export default {
         return
       }
       const list = []
-      for (let s of result.data.spaces) {
+      for (const s of result.data.spaces) {
         list.push(SpaceEntity.from({
           ...s
         }))

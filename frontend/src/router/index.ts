@@ -1,8 +1,8 @@
 import {createRouter, createWebHistory} from 'vue-router'
 
-import SpaceList from '@/components/SpaceList'
-import QrCodeJoinView from '@/components/QrCodeJoinView'
-import MainView from '@/components/layouts/MainView'
+import SpaceList from '@/components/SpaceList.vue'
+import QrCodeJoinView from '@/components/QrCodeJoinView.vue'
+import MainView from '@/components/layouts/MainView.vue'
 
 const routes = [
   {
