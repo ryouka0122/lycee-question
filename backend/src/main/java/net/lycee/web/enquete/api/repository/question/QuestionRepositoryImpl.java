@@ -52,7 +52,7 @@ public class QuestionRepositoryImpl implements QuestionRepository {
         List<QuestionEntity> questionList = this.questionMapper.readQuestions(
                 userId,
                 spaceId,
-                current.getMilliseconds()
+                current.get()
         );
 
         return questionList.stream()
@@ -108,7 +108,7 @@ public class QuestionRepositoryImpl implements QuestionRepository {
     @Override
     public QuestionEntity checkValidQuestion(
             UserId userId, QuestionId questionId, LyceeDate current) {
-        return questionMapper.checkQuestion(userId, questionId, current.getMilliseconds())
+        return questionMapper.checkQuestion(userId, questionId, current.get())
                 .orElseThrow(InvalidIdException::new);
     }
 

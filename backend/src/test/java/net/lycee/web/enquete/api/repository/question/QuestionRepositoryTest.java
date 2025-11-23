@@ -28,8 +28,8 @@ public class QuestionRepositoryTest {
         public void test_invalidSpace() {
 
             target.readQuestions(
-                    new UserId("01234567-abcd-abcd-abcd-user00000001"),
-                    new SpaceId("01234567-abcd-abcd-abcd-space0000001"),
+                    UserId.fromString("01234567-abcd-abcd-abcd-user00000001"),
+                    SpaceId.fromString("01234567-abcd-abcd-abcd-space0000001"),
                     new LyceeFixedDate("2024-03-01 14:00:01")
             );
 

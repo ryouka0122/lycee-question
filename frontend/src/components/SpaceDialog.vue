@@ -83,6 +83,7 @@ import QuestionRegisterCell from '@/components/QuestionRegisterCell.vue'
 import QuestionResultCell from '@/components/QuestionResultCell.vue'
 import QrcodeDialog from '@/components/QrcodeDialog.vue'
 import LyceeMessageDialog from '@/components/common/LyceeMessageDialog.vue'
+import {AppConfig} from "@/config/env";
 
 
 export default {
@@ -150,24 +151,28 @@ export default {
       // クローズ時のイベント登録（ブラウザごと終了された時，WebSocketを切断させるため）
       window.addEventListener("beforeunload", this.leaveSpace)
 
-      this.eventSource = new EventSource("http://localhost:8080/sse/stream");
+      this.eventSource = new EventSource(
+        `${AppConfig.sseBaseUrl}/connect/${this.spaceId}?userId=${userId}`
+      );
       this.connectionStatus = "connecting"
 
-      this.eventSource.onmessage = (e) => {
-        console.log("onmessage:", e.data, e);
-      };
       this.eventSource.onopen = () => {
-        console.log("SSE connection opened.")
         this.connectionStatus = "connected"
       }
       this.eventSource.onerror = (e) => {
-        console.error("onerror:", e);
         this.connectionStatus = "disconnected"
+        console.error(e)
       }
 
-      this.eventSource.addEventListener("INIT", (e) => {
-        console.log("INIT event:", e.data, e);
+      this.eventSource.addEventListener("answer-added", () => {
+        this.reloadQuestions()
       })
+
+      this.eventSource.addEventListener("question-added", () => {
+        this.reloadQuestions()
+      })
+
+
     })
   },
   unmounted() {
@@ -318,10 +323,10 @@ export default {
      * スペース退出
      */
     leaveSpace() {
-      if (this.liveClient) {
-        this.liveClient.disconnect(() => {})
+      if (this.eventSource) {
+        this.eventSource.close();
       }
-      this.liveClient = null
+      this.eventSource = null
     },
 
     /**
@@ -332,9 +337,12 @@ export default {
       if (this.connectionStatus === "disconnected") {
         icon.color = "red"
         icon.icon = "mdi-link-variant-off"
-      } else {
-        icon.color = (this.connectionStatus === "connecting" ? "blue": "green");
+      } else if (this.connectionStatus === "connected") {
+        icon.color = "green";
         icon.icon = "mdi-link-variant";
+      } else {
+        icon.color = "blue";
+        icon.icon = "mdi-connection";
       }
       this.$emit("update-icon", icon)
     }
