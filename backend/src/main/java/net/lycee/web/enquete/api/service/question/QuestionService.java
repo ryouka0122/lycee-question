@@ -1,14 +1,15 @@
 package net.lycee.web.enquete.api.service.question;
 
 import net.lycee.web.enquete.api.domain.QuestionId;
+import net.lycee.web.enquete.api.domain.SpaceId;
+import net.lycee.web.enquete.api.domain.UserId;
 import net.lycee.web.enquete.api.entity.AnswerEntity;
 import net.lycee.web.enquete.api.entity.QuestionEntity;
 import net.lycee.web.enquete.api.repository.question.QuestionRepository;
 import net.lycee.web.enquete.api.service.space.SpaceService;
-import net.lycee.web.enquete.live.LiveService;
+import net.lycee.web.enquete.api.service.sse.SseNotifyMessage;
+import net.lycee.web.enquete.api.service.sse.SseService;
 import net.lycee.web.enquete.utils.date.LyceeDate;
-import net.lycee.web.enquete.api.domain.SpaceId;
-import net.lycee.web.enquete.api.domain.UserId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,20 +24,19 @@ public class QuestionService {
 
     private final SpaceService spaceService;
 
-    private final LiveService liveService;
-
+    private final SseService sseService;
 
     @Autowired
     public QuestionService(
             LyceeDate lyceeDate,
             QuestionRepository questionRepository,
             SpaceService spaceService,
-            LiveService liveService
+            SseService sseService
     ) {
         this.lyceeDate = lyceeDate;
         this.questionRepository = questionRepository;
         this.spaceService = spaceService;
-        this.liveService = liveService;
+        this.sseService = sseService;
     }
 
 
@@ -61,7 +61,11 @@ public class QuestionService {
                 ).toList()
         ));
 
-        liveService.noticeSpaceInfo(createParam.spaceId());
+        sseService.notifyMessageToJoiner(createParam.spaceId(),
+                new SseNotifyMessage(
+                        "question-added",
+                        ""
+                ));
 
         return questionId;
     }

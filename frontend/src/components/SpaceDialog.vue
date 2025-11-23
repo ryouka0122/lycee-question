@@ -74,7 +74,6 @@
 <script>
 import { QUESTION_TYPE } from '@/constants'
 import { getUserId } from '@/utils'
-import { LiveClient } from '@/clients/websocket/LiveClient'
 import { SpaceClient } from '@/clients/api/SpaceClient'
 import { QuestionClient } from '@/clients/api/QuestionClient'
 import { QuestionEntity } from '@/entity/QuestionEntity'
@@ -84,6 +83,7 @@ import QuestionRegisterCell from '@/components/QuestionRegisterCell.vue'
 import QuestionResultCell from '@/components/QuestionResultCell.vue'
 import QrcodeDialog from '@/components/QrcodeDialog.vue'
 import LyceeMessageDialog from '@/components/common/LyceeMessageDialog.vue'
+import {AppConfig} from "@/config/env";
 
 
 export default {
@@ -119,14 +119,20 @@ export default {
       questionClient: null,
       answerClient: null,
 
-      /* websocket */
-      liveClient: null,
-      isConnected: false
+
+      /* SSE */
+      eventSource: null,
+      connectionStatus: "disconnected"
     }
   },
   computed: {
     currentTime() {
       return new Date().getTime()
+    }
+  },
+  watch: {
+    connectionStatus() {
+      this.updateConnectionIcon()
     }
   },
   mounted() {
@@ -145,8 +151,28 @@ export default {
       // クローズ時のイベント登録（ブラウザごと終了された時，WebSocketを切断させるため）
       window.addEventListener("beforeunload", this.leaveSpace)
 
-      // WebSocketの接続
-      this.joinSpace()
+      this.eventSource = new EventSource(
+        `${AppConfig.sseBaseUrl}/connect/${this.spaceId}?userId=${userId}`
+      );
+      this.connectionStatus = "connecting"
+
+      this.eventSource.onopen = () => {
+        this.connectionStatus = "connected"
+      }
+      this.eventSource.onerror = (e) => {
+        this.connectionStatus = "disconnected"
+        console.error(e)
+      }
+
+      this.eventSource.addEventListener("answer-added", () => {
+        this.reloadQuestions()
+      })
+
+      this.eventSource.addEventListener("question-added", () => {
+        this.reloadQuestions()
+      })
+
+
     })
   },
   unmounted() {
@@ -220,9 +246,6 @@ export default {
      */
     onClickReload() {
       this.reloadQuestions()
-      if (!this.isConnected) {
-        this.joinSpace()
-      }
     },
 
     /*
@@ -297,48 +320,29 @@ export default {
      */
 
     /**
-     * スペース参加
-     */
-    joinSpace() {
-      // クライアント作成 + WebSocket接続
-      this.liveClient = new LiveClient(this.spaceId, this.userId)
-      this.liveClient.question = (/*type, contents*/) => {
-        this.reloadQuestions()
-      }
-      this.liveClient.info = (/*type, contents*/) => {
-        this.reloadQuestions()
-      }
-
-      this.liveClient.connect((/*type, contents*/) => {
-        this.isConnected = true
-        this.updateConnectionIcon()
-      }, () => {
-        // websocketの確立に失敗
-        this.isConnected = false
-        this.updateConnectionIcon()
-      })
-    },
-
-    /**
      * スペース退出
      */
     leaveSpace() {
-      if (this.liveClient) {
-        this.liveClient.disconnect(() => {})
+      if (this.eventSource) {
+        this.eventSource.close();
       }
-      this.liveClient = null
+      this.eventSource = null
     },
 
     /**
      * ダイアログのアイコン更新
      */
     updateConnectionIcon() {
-      const icon = (this.isConnected) ? {
-        color: "blue",
-        icon: "mdi-link-variant"
-      } : {
-        color: "red",
-        icon: "mdi-link-variant-off"
+      const icon = {}
+      if (this.connectionStatus === "disconnected") {
+        icon.color = "red"
+        icon.icon = "mdi-link-variant-off"
+      } else if (this.connectionStatus === "connected") {
+        icon.color = "green";
+        icon.icon = "mdi-link-variant";
+      } else {
+        icon.color = "blue";
+        icon.icon = "mdi-connection";
       }
       this.$emit("update-icon", icon)
     }

@@ -9,10 +9,10 @@ import net.lycee.web.enquete.api.entity.QuestionEntity;
 import net.lycee.web.enquete.api.mapper.AnswerHistoryRecord;
 import net.lycee.web.enquete.api.repository.question.AnswerSummary;
 import net.lycee.web.enquete.api.repository.question.AnswerSummaryEntity;
-import net.lycee.web.enquete.api.repository.question.QuestionAnswerEntity;
 import net.lycee.web.enquete.api.repository.question.QuestionRepository;
 import net.lycee.web.enquete.api.service.space.SpaceService;
-import net.lycee.web.enquete.live.LiveService;
+import net.lycee.web.enquete.api.service.sse.SseNotifyMessage;
+import net.lycee.web.enquete.api.service.sse.SseService;
 import net.lycee.web.enquete.utils.date.LyceeDate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -31,19 +31,19 @@ public class AnswerService {
 
     private final SpaceService spaceService;
 
-    private final LiveService liveService;
+    private final SseService sseService;
 
     @Autowired
     public AnswerService(
             LyceeDate lyceeDate,
             QuestionRepository questionRepository,
             SpaceService spaceService,
-            LiveService liveService
+            SseService sseService
     ) {
         this.lyceeDate = lyceeDate;
         this.questionRepository = questionRepository;
         this.spaceService = spaceService;
-        this.liveService = liveService;
+        this.sseService = sseService;
     }
 
     public void answer(
@@ -60,8 +60,12 @@ public class AnswerService {
             // TODO: 重複した場合は，無視する(ほんとにいいの？)
         }
 
-        // WebSocketにて通知
-        liveService.noticeSpaceInfo(question.getSpaceId());
+        sseService.notifyMessageToOwner(
+                question.getSpaceId(),
+                new SseNotifyMessage(
+                        "answer-added",
+                        "")
+        );
     }
 
     public List<AnswerSummaryInfo> summaryBySpaceId(UserId userId, SpaceId spaceId) {

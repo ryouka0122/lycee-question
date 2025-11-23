@@ -11,8 +11,14 @@ import java.util.Optional;
 
 @Service
 public class UserService {
+
+    private final UserRepository userRepository;
+
     @Autowired
-    private UserRepository userRepository;
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
 
     public UserId registerUser() {
         return userRepository.registerUser();
@@ -25,6 +31,7 @@ public class UserService {
     public UserInfo readUserInfo(UserId userId) {
         Optional<UserSearchResult> userInfo = userRepository.search(userId);
         if (userInfo.isEmpty()) {
+            // TODO 400系で返却できるようにしておきたい
             throw new RuntimeException();
         }
         return new UserInfo(
