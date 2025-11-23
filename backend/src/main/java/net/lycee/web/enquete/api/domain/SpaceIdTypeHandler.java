@@ -2,6 +2,7 @@ package net.lycee.web.enquete.api.domain;
 
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
+import org.apache.ibatis.type.MappedJdbcTypes;
 import org.apache.ibatis.type.MappedTypes;
 
 import java.sql.CallableStatement;
@@ -10,11 +11,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 @MappedTypes(SpaceId.class)
+@MappedJdbcTypes({JdbcType.OTHER})
 public class SpaceIdTypeHandler extends BaseTypeHandler<SpaceId> {
 
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, SpaceId parameter, JdbcType jdbcType) throws SQLException {
-        ps.setString(i, parameter.value());
+        ps.setObject(i, parameter.value());
     }
 
     @Override
@@ -23,7 +25,7 @@ public class SpaceIdTypeHandler extends BaseTypeHandler<SpaceId> {
         if (value == null) {
             return null;
         }
-        return new SpaceId(value);
+        return SpaceId.fromString(value);
     }
 
     @Override
@@ -32,7 +34,7 @@ public class SpaceIdTypeHandler extends BaseTypeHandler<SpaceId> {
         if (value == null) {
             return null;
         }
-        return new SpaceId(value);
+        return SpaceId.fromString(value);
     }
 
     @Override
@@ -41,6 +43,6 @@ public class SpaceIdTypeHandler extends BaseTypeHandler<SpaceId> {
         if (value == null) {
             return null;
         }
-        return new SpaceId(value);
+        return SpaceId.fromString(value);
     }
 }

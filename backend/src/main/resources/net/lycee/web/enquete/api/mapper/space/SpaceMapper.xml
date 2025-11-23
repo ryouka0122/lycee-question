@@ -5,8 +5,8 @@
     <resultMap
             id="spaceEntity"
             type="net.lycee.web.enquete.api.entity.SpaceEntity">
-        <result column="SPACE_ID" jdbcType="VARCHAR" property="id" />
-        <result column="OWNER_USER_ID" jdbcType="VARCHAR" property="ownerId" />
+        <result column="SPACE_ID" jdbcType="OTHER" property="id" />
+        <result column="OWNER_USER_ID" jdbcType="OTHER" property="ownerId" />
         <result column="NAME" jdbcType="VARCHAR" property="name" />
         <result column="OPENED_TIME" jdbcType="BIGINT" property="openedTime" />
         <result column="CLOSE_TIME" jdbcType="BIGINT" property="closeTime" />
@@ -26,10 +26,10 @@
         ON
             UJ.SPACE_ID = S.SPACE_ID
         WHERE
-            UJ.USER_ID = #{userId}
+            UJ.USER_ID = #{userId, jdbcType=OTHER}
         <if test="spaceId != null">
         AND
-            S.SPACE_ID = #{spaceId}
+            S.SPACE_ID = #{spaceId, jdbcType=OTHER}
         </if>
         ORDER BY
             S.END_TIME DESC
@@ -44,8 +44,8 @@
             OPENED_TIME,
             END_TIME
         ) VALUES (
-            #{entity.spaceId},
-            #{entity.ownerId},
+            #{entity.spaceId, jdbcType=OTHER},
+            #{entity.ownerId, jdbcType=OTHER},
             #{entity.name},
             #{entity.openedTime},
             #{entity.closeTime}
@@ -63,7 +63,7 @@
         FROM
             QES_SPACE S
         WHERE
-            S.SPACE_ID = #{spaceId}
+            S.SPACE_ID = #{spaceId, jdbcType=OTHER}
             AND S.END_TIME &gt; #{currentTime}
     </select>
 
@@ -74,8 +74,8 @@
             USER_ID,
             SPACE_ID
         ) VALUES (
-            #{userId},
-            #{spaceId}
+            #{userId, jdbcType=OTHER},
+            #{spaceId, jdbcType=OTHER}
         )
     </insert>
 

@@ -28,7 +28,7 @@ public class UserService {
             throw new RuntimeException();
         }
         return new UserInfo(
-                new UserId(userInfo.get().userId())
+                UserId.fromString(userInfo.get().userId())
         );
     }
 }

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import ApiClient from '@/clients/api/base/api_client'
+import {AppConfig} from "@/config/env";
 
 class JsonLoadClient extends ApiClient {
   client
@@ -49,14 +50,14 @@ class JsonLoadClient extends ApiClient {
 
 // ローカル開発モードでのaxios設定
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VUE_APP_API_BASE_URL,
+  baseURL: AppConfig.apiBaseUrl,
   headers: {
     "Content-Type": "application/json"
   }
 })
 
 function createApiClient(hook) {
-  return new JsonLoadClient(axiosClient, hook, import.meta.env.VUE_APP_DUMMY_USER_ID)
+  return new JsonLoadClient(axiosClient, hook, AppConfig.dummyUserId)
 }
 
 export {

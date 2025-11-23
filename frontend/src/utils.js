@@ -4,24 +4,7 @@ import {
 } from '@/constants'
 
 import { UserClient } from '@/clients/api/UserClient'
-
-// showDialog(xxxDialog, {
-//   title: "",
-// })
-// .then(result => {
-//   ....
-// })
-// みたいなダイアログをメソッド形式で実装したい
-//
-// Vue2でのサンプル
-// https://zenn.dev/tshuto/articles/bd236f2f49b0d1
-//
-// Vue3ではVue.extendがないから少し手を加える必要がある
-// https://v3.ja.vuejs.org/guide/migration/global-api.html#vue-extend-%E3%81%AE%E5%89%8A%E9%99%A4
-//
-function hasAvailableValue(obj, key) {
-  return key in obj && obj[key] !== null && obj[key] !== ""
-}
+import {AppConfig} from "@/config/env";
 
 function getRealDate() {
   return new Date()
@@ -31,8 +14,8 @@ function getFixedDate(fixedDate) {
   return () => Date.parse(fixedDate)
 }
 
-const _getCurrentDate = (hasAvailableValue(import.meta.env, "VUE_APP_FIXED_DATE"))
-  ? getFixedDate(import.meta.env.VUE_APP_FIXED_DATE) : getRealDate
+const _getCurrentDate = (AppConfig.fixedDate)
+  ? getFixedDate(AppConfig.fixedDate) : getRealDate
 
 export function getCurrentDate() {
   return _getCurrentDate()
@@ -52,4 +35,35 @@ export async function getUserId() {
 
   localStorage.setItem(LOCAL_STORAGE_KEY.USER_ID, response.userId)
   return response.userId
+}
+
+/**
+ *
+ * @param date {Date}
+ * @param format {string}
+ */
+export function formatDate(date, format = 'YYYY-MM-DDThh:mm:ss') {
+  // 日付フォーマットのパターン
+  const pad2 = (n) => ("00" + n).slice(-2)
+  const mapper = {
+    "YYYY": (date) => date.getFullYear(),
+    "MM": (date) => pad2(date.getMonth() + 1),
+    "DD": (date) => pad2(date.getDate()),
+    "hh": (date) => pad2(date.getHours()),
+    "mm": (date) => pad2(date.getMinutes()),
+    "ss": (date) => pad2(date.getSeconds()),
+  }
+
+  // パターンが長い順に並び替えておく
+  const keys = Object.keys(mapper).sort((a, b) => {
+    return b.length - a.length
+  })
+
+  // フォーマットの適用
+  let result = format;
+  for(const key of keys) {
+    result = result.replaceAll(key, mapper[key](date));
+  }
+
+  return result;
 }

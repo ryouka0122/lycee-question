@@ -9,11 +9,11 @@ public class QuestionIdEditor extends PropertyEditorSupport {
         if (o == null) {
             return null;
         }
-        return ((QuestionId) o).value();
+        return ((QuestionId) o).value().toString();
     }
 
     @Override
     public void setAsText(String text) throws IllegalArgumentException {
-        setValue(new QuestionId(text));
+        setValue(QuestionId.fromString(text));
     }
 }

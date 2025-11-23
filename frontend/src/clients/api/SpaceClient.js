@@ -1,5 +1,6 @@
 import { createApiClient } from '@/clients/api/ApiClient'
 import { HEADER_KEY } from '@/constants'
+import {formatDate} from "@/utils";
 
 export class SpaceClient {
   endpoint = "/space"
@@ -19,10 +20,16 @@ export class SpaceClient {
     return this.client.get(this.endpoint + "/" + spaceId, {}, this.createHeader())
   }
 
+  /**
+   *
+   * @param {string} name
+   * @param {Date} closeDate
+   * @return {Promise<*>}
+   */
   async create(name, closeDate) {
     return this.client.post(this.endpoint, {
       name: name,
-      closeTime: closeDate.getTime()
+      closeTime: formatDate(closeDate)
     },
       this.createHeader()
     )

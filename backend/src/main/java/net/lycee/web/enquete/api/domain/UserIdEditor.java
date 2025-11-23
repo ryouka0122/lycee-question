@@ -9,11 +9,11 @@ public class UserIdEditor extends PropertyEditorSupport {
         if (o == null) {
             return null;
         }
-        return ((UserId) o).value();
+        return ((UserId) o).value().toString();
     }
 
     @Override
     public void setAsText(String text) throws IllegalArgumentException {
-        setValue(new UserId(text));
+        setValue(UserId.fromString(text));
     }
 }

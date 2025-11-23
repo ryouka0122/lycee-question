@@ -95,7 +95,7 @@ public class QuestionController {
         );
 
         return ResponseEntity.status(HttpStatus.CREATED)
-                .header("Location", questionId.value())
+                .header("Location", questionId.toString())
                 .body(null);
     }
 
@@ -112,7 +112,7 @@ public class QuestionController {
                     .constraint(QuestionPostRequest::getEndTime, "endTime", endTime -> {
                         // FIXME: 共通化やドメイン単位での実装などが出来ないか？
                         return endTime.notNull()
-                                .greaterThanOrEqual(lyceeDate.getMilliseconds())
+                                .after(lyceeDate)
                                 .message("{0}は未来日を設定してください");
                     })
                     .constraint(QuestionPostRequest::getAnswers, "answers", answers -> {

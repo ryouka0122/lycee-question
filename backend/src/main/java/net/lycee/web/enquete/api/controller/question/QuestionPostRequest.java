@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 import net.lycee.web.enquete.api.domain.QuestionType;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -18,7 +19,7 @@ public class QuestionPostRequest {
     private String description;
 
     @NotNull
-    private Long endTime;
+    private LocalDateTime endTime;
 
     @NotEmpty
     @Size(min = 2)

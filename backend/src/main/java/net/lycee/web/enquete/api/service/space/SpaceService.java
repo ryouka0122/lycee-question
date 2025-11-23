@@ -16,6 +16,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -41,7 +42,7 @@ public class SpaceService {
     public LyceeConstants.JoinResult join(
             UserId userId,
             SpaceId spaceId) {
-        long current = lyceeDate.getMilliseconds();
+        LocalDateTime current = lyceeDate.get();
 
         boolean isAvailable = spaceRepository.checkOpened(spaceId, current);
         if (!isAvailable) {
@@ -83,7 +84,7 @@ public class SpaceService {
         if (spaceList.isEmpty()) {
             throw new NotJoinException();
         }
-        SpaceEntity space = spaceList.get(0);
+        SpaceEntity space = spaceList.getFirst();
         return new SpaceInfo(
                 space.getId(),
                 space.getOwnerId(),
@@ -104,7 +105,7 @@ public class SpaceService {
                 spaceId,
                 registerDto.userId(),
                 registerDto.name(),
-                lyceeDate.getMilliseconds(),
+                lyceeDate.get(),
                 registerDto.closeTime()
         );
 

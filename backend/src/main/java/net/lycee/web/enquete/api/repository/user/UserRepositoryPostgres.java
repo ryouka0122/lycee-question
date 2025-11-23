@@ -12,25 +12,28 @@ import java.util.Optional;
 @Repository
 public class UserRepositoryPostgres implements UserRepository {
 
-    @Autowired
     private IdUtils userUtils;
 
-    @Autowired
     private UserMapper userMapper;
+
+    public UserRepositoryPostgres(IdUtils userUtils, UserMapper userMapper) {
+        this.userUtils = userUtils;
+        this.userMapper = userMapper;
+    }
 
 
     @Override
     public UserId registerUser() {
 
         UserId userId = userUtils.publishUserId();
-        userMapper.insert(userId.value());
+        userMapper.insert(userId);
 
         return userId;
     }
 
     @Override
     public Optional<UserSearchResult> search(UserId userId) {
-        return userMapper.search(userId.value());
+        return userMapper.search(userId);
     }
 
 }

@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.function.Function;
 
 @RestController
@@ -36,7 +37,7 @@ public class SpaceController {
                     })
                     .constraint(SpacePostRequest::getCloseTime, "closeTime", it -> {
                         return it.notNull()
-                                .greaterThan(lyceeDate.getMilliseconds()).message(
+                                .after(lyceeDate).message(
                                         "{0}は未来日を設定してください"
                                 );
                     });
@@ -111,7 +112,6 @@ public class SpaceController {
         if (!violations.isValid()) {
             throw new YaviValidationException(violations);
         }
-
         SpaceRegisterDto registerDto = new SpaceRegisterDto(
                 requestUser.getUserId(),
                 request.getName(),

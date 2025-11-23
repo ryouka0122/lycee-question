@@ -8,7 +8,9 @@ public interface LyceeCodeEnum<T extends Enum<T>> {
 
     String getCode();
 
-    static <E extends LyceeCodeEnum> E of(Class<E> clazz, String code) {
+    static
+    <T extends Enum<T>, E extends LyceeCodeEnum<T>>
+    E of(Class<E> clazz, String code) {
         return Arrays.stream(clazz.getEnumConstants())
                 .filter(it -> it.getCode().equals(code))
                 .findFirst()

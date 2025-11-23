@@ -1,10 +1,15 @@
 package net.lycee.web.enquete.api.repository.space;
 
+import net.lycee.web.enquete.api.domain.SpaceId;
+import net.lycee.web.enquete.api.domain.UserId;
+
+import java.time.LocalDateTime;
+
 public record QesSpace(
-        String spaceId,
-        String ownerId,
+        SpaceId spaceId,
+        UserId ownerId,
         String name,
-        Long openedTime,
-        Long closeTime
+        LocalDateTime openedTime,
+        LocalDateTime closeTime
 ) {
 }

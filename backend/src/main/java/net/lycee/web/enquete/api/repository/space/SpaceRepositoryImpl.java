@@ -7,6 +7,7 @@ import net.lycee.web.enquete.api.domain.UserId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -28,8 +29,8 @@ public class SpaceRepositoryImpl implements SpaceRepository {
     @Override
     public void insert(SpaceEntity entity) {
         spaceMapper.insert(new QesSpace(
-                entity.getId().value(),
-                entity.getOwnerId().value(),
+                entity.getId(),
+                entity.getOwnerId(),
                 entity.getName(),
                 entity.getOpenedTime(),
                 entity.getCloseTime()
@@ -37,12 +38,12 @@ public class SpaceRepositoryImpl implements SpaceRepository {
     }
 
     @Override
-    public boolean checkOpened(SpaceId spaceId, long currentTime) {
-        return spaceMapper.selectByPKAndTime(spaceId.value(), currentTime) != null;
+    public boolean checkOpened(SpaceId spaceId, LocalDateTime currentTime) {
+        return spaceMapper.selectByPKAndTime(spaceId, currentTime) != null;
     }
 
     @Override
     public void join(UserId userId, SpaceId spaceId) {
-        spaceMapper.insertJoin(userId.value(), spaceId.value());
+        spaceMapper.insertJoin(userId, spaceId);
     }
 }

@@ -9,11 +9,11 @@ public class SpaceIdEditor extends PropertyEditorSupport {
         if (o == null) {
             return null;
         }
-        return ((SpaceId) o).value();
+        return ((SpaceId) o).value().toString();
     }
 
     @Override
     public void setAsText(String text) throws IllegalArgumentException {
-        setValue(new SpaceId(text));
+        setValue(SpaceId.fromString(text));
     }
 }
