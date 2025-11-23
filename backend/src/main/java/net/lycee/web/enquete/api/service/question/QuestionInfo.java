@@ -4,6 +4,7 @@ import net.lycee.web.enquete.api.domain.QuestionId;
 import net.lycee.web.enquete.api.domain.QuestionType;
 import net.lycee.web.enquete.api.domain.SpaceId;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record QuestionInfo(
@@ -12,7 +13,7 @@ public record QuestionInfo(
         Integer order,
         QuestionType type,
         String description,
-        Long endTime,
+        LocalDateTime endTime,
         List<QuestionAnswerInfo> answers
 ) {
 }

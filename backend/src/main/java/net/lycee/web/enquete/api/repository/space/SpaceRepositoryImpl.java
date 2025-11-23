@@ -7,6 +7,7 @@ import net.lycee.web.enquete.api.domain.UserId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -37,12 +38,12 @@ public class SpaceRepositoryImpl implements SpaceRepository {
     }
 
     @Override
-    public boolean checkOpened(SpaceId spaceId, long currentTime) {
-        return spaceMapper.selectByPKAndTime(spaceId.toString(), currentTime) != null;
+    public boolean checkOpened(SpaceId spaceId, LocalDateTime currentTime) {
+        return spaceMapper.selectByPKAndTime(spaceId, currentTime) != null;
     }
 
     @Override
     public void join(UserId userId, SpaceId spaceId) {
-        spaceMapper.insertJoin(userId.toString(), spaceId.toString());
+        spaceMapper.insertJoin(userId, spaceId);
     }
 }

@@ -4,6 +4,7 @@ import net.lycee.web.enquete.api.domain.QuestionType;
 import net.lycee.web.enquete.api.domain.SpaceId;
 import net.lycee.web.enquete.api.domain.UserId;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record QuestionCreateParam(
@@ -11,7 +12,7 @@ public record QuestionCreateParam(
         SpaceId spaceId,
         QuestionType type,
         String description,
-        Long endTime,
+        LocalDateTime endTime,
         List<String> answers
 ) {
 }

@@ -7,6 +7,7 @@ import net.lycee.web.enquete.api.domain.SpaceId;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Mapper
@@ -20,12 +21,12 @@ public interface SpaceMapper {
     void insert(@Param("entity") QesSpace entity);
 
     SpaceEntity selectByPKAndTime(
-            @Param("spaceId") String spaceId,
-            @Param("currentTime") long currentTime
+            @Param("spaceId") SpaceId spaceId,
+            @Param("currentTime") LocalDateTime currentTime
     );
 
     void insertJoin(
-            @Param("userId") String userId,
-            @Param("spaceId") String spaceId);
+            @Param("userId") UserId userId,
+            @Param("spaceId") SpaceId spaceId);
 
 }

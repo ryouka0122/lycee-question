@@ -7,6 +7,7 @@ import net.lycee.web.enquete.api.domain.QuestionId;
 import net.lycee.web.enquete.api.domain.QuestionType;
 import net.lycee.web.enquete.api.domain.SpaceId;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -18,7 +19,7 @@ public class QuestionEntity {
     private Integer no;
     private QuestionType type;
     private String description;
-    private Long endTime;
+    private LocalDateTime endTime;
 
     private List<AnswerEntity> answers;
 }

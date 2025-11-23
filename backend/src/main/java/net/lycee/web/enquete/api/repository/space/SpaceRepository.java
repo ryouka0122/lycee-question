@@ -4,6 +4,7 @@ import net.lycee.web.enquete.api.entity.SpaceEntity;
 import net.lycee.web.enquete.api.domain.SpaceId;
 import net.lycee.web.enquete.api.domain.UserId;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SpaceRepository {
@@ -12,7 +13,7 @@ public interface SpaceRepository {
 
     void insert(SpaceEntity entity);
 
-    boolean checkOpened(SpaceId spaceId, long currentTime);
+    boolean checkOpened(SpaceId spaceId, LocalDateTime currentTime);
 
     void join(UserId userId, SpaceId spaceId);
 }

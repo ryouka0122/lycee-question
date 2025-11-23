@@ -18,7 +18,7 @@
         FROM
             QES_USER
         WHERE
-            USER_ID = #{userId}
+            USER_ID = #{userId, jdbcType=OTHER}
     </select>
 
     <insert id="insertJoin">
@@ -27,8 +27,8 @@
             USER_ID,
             SPACE_ID
         ) VALUES (
-            #{userId},
-            #{spaceId}
+            #{userId, jdbcType=OTHER},
+            #{spaceId, jdbcType=OTHER}
         )
 
 

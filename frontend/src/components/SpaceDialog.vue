@@ -267,7 +267,7 @@ export default {
             it.description,
             it.answers,
             /* isMultiple(仮置き) */it.type === QUESTION_TYPE.MULTIPLE,
-            it.endTime
+            Date.parse(it.endTime)
           )
         })
 

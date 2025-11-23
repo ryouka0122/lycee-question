@@ -69,8 +69,8 @@
             DESCRIPTION,
             END_TIME
         ) VALUES (
-            #{record.spaceId},
-            #{record.questionId},
+            #{record.spaceId, jdbcType=OTHER},
+            #{record.questionId, jdbcType=OTHER},
             (
                 SELECT
                     1 + COALESCE(MAX(Q.QUESTION_NO), 0)

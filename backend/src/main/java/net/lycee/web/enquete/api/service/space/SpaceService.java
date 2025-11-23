@@ -16,6 +16,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -41,7 +42,7 @@ public class SpaceService {
     public LyceeConstants.JoinResult join(
             UserId userId,
             SpaceId spaceId) {
-        long current = lyceeDate.getMilliseconds();
+        LocalDateTime current = lyceeDate.get();
 
         boolean isAvailable = spaceRepository.checkOpened(spaceId, current);
         if (!isAvailable) {
