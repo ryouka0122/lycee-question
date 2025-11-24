@@ -71,7 +71,7 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { QUESTION_TYPE } from '@/constants'
 import { getUserId } from '@/utils'
 import { SpaceClient } from '@/clients/api/SpaceClient'
@@ -84,270 +84,247 @@ import QuestionResultCell from '@/components/QuestionResultCell.vue'
 import QrcodeDialog from '@/components/QrcodeDialog.vue'
 import LyceeMessageDialog from '@/components/common/LyceeMessageDialog.vue'
 import {AppConfig} from "@/config/env";
+import {inject, onMounted, onUnmounted, ref, useTemplateRef, watch} from "vue";
 
 
-export default {
-  name: 'SpaceDialog',
-  components: { QuestionResultCell, QuestionRegisterCell, QuestionCell },
-  inject: [
-    "showDialog"
-  ],
-  props: {
-    spaceId: { type: String, required: true }
-  },
-  emits: [
-    "close", "update-icon"
-  ],
-  data() {
-    return {
-      /* ユーザ情報 */
-      userId: null,
+defineOptions({
+  name: "SpaceDialog"
+})
 
-      /* スペース情報 */
-      space: null,
+const showDialog = inject("showDialog")
 
-      /* 質問 */
-      questions: [],
-      history: {},
+const emit = defineEmits(["close", "update-icon"])
 
-      /* 登録パネル */
-      isOwner: false,
-      registerExpanded: false,
+const props = defineProps<{
+  spaceId: string
+}>()
 
-      /* クライアント */
-      spaceClient: null,
-      questionClient: null,
-      answerClient: null,
+/* ユーザ情報 */
+const userId = ref<string>("")
 
+/* スペース情報 */
+const space = ref<object|null>(null)
 
-      /* SSE */
-      eventSource: null,
-      connectionStatus: "disconnected"
+/* 質問 */
+const questions = ref<QuestionEntity[]>([])
+const history = ref<object>([])
+
+/* 登録パネル */
+const isOwner = ref(false)
+const registerExpanded = ref(false)
+
+/* クライアント */
+let spaceClient!: SpaceClient
+let questionClient!: QuestionClient
+let answerClient!: AnswerClient
+
+/* SSE */
+let eventSource! : EventSource
+type ConnectionStatus = "disconnected" | "connecting" | "connected"
+const connectionStatus = ref<ConnectionStatus>("disconnected")
+
+watch(connectionStatus, () => {
+  updateConnectionIcon()
+})
+
+onMounted(() => {
+  updateConnectionIcon()
+
+  getUserId().then((it: string) => {
+    // 各種設定の初期化
+    userId.value = it
+    spaceClient = new SpaceClient(userId.value)
+    questionClient = new SpaceClient(userId.value, props.spaceId)
+    answerClient = new SpaceClient(userId.value, props.spaceId)
+
+    reloadSpaceInfo()
+
+    // タブが閉じる時の処理登録
+    window.addEventListener("beforeunload", leaveSpace)
+
+    // SSE設定
+    eventSource = new EventSource(
+      `${AppConfig.sseBaseUrl}/connect/${props.spaceId}?userId=${userId.value}`
+    );
+    connectionStatus.value = "connecting"
+
+    eventSource.onopen = () => {
+      connectionStatus.value = "connected"
     }
-  },
-  computed: {
-    currentTime() {
-      return new Date().getTime()
+    eventSource.onerror = (e) => {
+      connectionStatus.value = "disconnected"
+      console.error(e)
     }
-  },
-  watch: {
-    connectionStatus() {
-      this.updateConnectionIcon()
-    }
-  },
-  mounted() {
-    this.updateConnectionIcon()
 
-    getUserId()
-    .then(userId => {
-      this.userId = userId
-      this.spaceClient = new SpaceClient(userId)
-      this.questionClient = new QuestionClient(userId, this.spaceId)
-      this.answerClient = new AnswerClient(userId, this.spaceId)
-
-      // スペース情報の取得
-      this.reloadSpaceInfo()
-
-      // クローズ時のイベント登録（ブラウザごと終了された時，WebSocketを切断させるため）
-      window.addEventListener("beforeunload", this.leaveSpace)
-
-      this.eventSource = new EventSource(
-        `${AppConfig.sseBaseUrl}/connect/${this.spaceId}?userId=${userId}`
-      );
-      this.connectionStatus = "connecting"
-
-      this.eventSource.onopen = () => {
-        this.connectionStatus = "connected"
-      }
-      this.eventSource.onerror = (e) => {
-        this.connectionStatus = "disconnected"
-        console.error(e)
-      }
-
-      this.eventSource.addEventListener("answer-added", () => {
-        this.reloadQuestions()
-      })
-
-      this.eventSource.addEventListener("question-added", () => {
-        this.reloadQuestions()
-      })
-
-
+    eventSource.addEventListener("answer-added", () => {
+      reloadQuestions()
     })
-  },
-  unmounted() {
-    window.removeEventListener("beforeunload", this.leaveSpace)
-    this.leaveSpace()
-  },
-  methods: {
 
-    /**
-     * 再読み込み処理
-     */
-    reloadSpaceInfo() {
-      this.spaceClient.readOne(this.spaceId)
-        .then(result => {
-          if(result.status !== 200) {
-            return
-          }
-          this.space = result.data
-          this.isOwner = (this.userId === this.space.ownerId)
-          this.reloadQuestions()
-        })
-    },
+    eventSource.addEventListener("question-added", () => {
+      reloadQuestions()
+    })
+  })
+})
+onUnmounted(() => {
+  window.removeEventListener("beforeunload", leaveSpace)
+  leaveSpace()
+})
 
-    /**
-     * 退出処理
-     */
-    onLeave() {
-      this.leaveSpace()
-      this.$emit("close")
-    },
-
-    /*
-     * 送信ボタン ----------------------------------------
-     */
-    onSubmit(data) {
-      this.answerClient.answer({
-        questionId: data.questionId,
-        answers: data.answers
-      }).then(() => {
-        this.reloadQuestions()
-      })
-    },
-
-    /*
-     * 新規追加ボタン ----------------------------------------
-     */
-    onRegister(data) {
-      const endDate = new Date()
-
-      // TODO: 回答期限の設定を追加する
-      endDate.setHours(endDate.getHours() + 6)
-
-      this.questionClient.create({
-        type: QUESTION_TYPE.SINGLE,
-        endDate: endDate,
-        ...data}
-      ).then(result => {
-        if (result.status !== 201) {
-          return
-        }
-        // fixme: 自動で閉じない...
-        this.registerExpanded = false
-
-        this.reloadQuestions()
-        this.$refs.registerCell.reset()
-      })
-    },
-
-    /*
-     * 読み込みボタン ----------------------------------------
-     */
-    onClickReload() {
-      this.reloadQuestions()
-    },
-
-    /*
-     * 退室ボタン ----------------------------------------
-     */
-    onLeaveSpace() {
-      this.showDialog({
-          dialog: LyceeMessageDialog,
-          title: "確認",
-          persistent: true,
-          props: {
-            message:`スペース「${this.space.name}」から退出しますか？`,
-            buttons: [
-              { text: "Cancel", color: "red", variant: "text" },
-              { text: "OK", color: "blue", variant: "text" },
-            ]
-          }
-        })
-      .then(result => {
-        if (result === "OK") {
-          this.onLeave()
-        }
-      })
-    },
-
-    reloadQuestions() {
-
-      const answerPromise = this.isOwner ?
-        this.answerClient.summaryInSpace(this.spaceId) : this.answerClient.readAllInSpace()
-
-      Promise.all([
-        this.questionClient.readAll(),
-        answerPromise,
-      ])
-      .then(resultAll => {
-        const [ questions, answers ] = resultAll
-
-        this.questions = questions.data.questions.map(it => {
-          return new QuestionEntity(
-            it.questionId,
-            it.type,
-            it.description,
-            it.answers,
-            /* isMultiple(仮置き) */it.type === QUESTION_TYPE.MULTIPLE,
-            Date.parse(it.endTime)
-          )
-        })
-
-        const history = {}
-        for (const answer of answers.data.history) {
-          history[answer.questionId] = answer.answers
-        }
-        this.history = history
-      })
-    },
-
-    /**
-     * QRボタン選択
-     */
-    onClickQr() {
-      this.showDialog({
-        dialog: QrcodeDialog,
-        title: "スペースのQRコード",
-        props: {
-          spaceId: this.spaceId
-        }
-      })
-    },
-
-    /*
-     * WebSocket ----------------------------------------
-     */
-
-    /**
-     * スペース退出
-     */
-    leaveSpace() {
-      if (this.eventSource) {
-        this.eventSource.close();
-      }
-      this.eventSource = null
-    },
-
-    /**
-     * ダイアログのアイコン更新
-     */
-    updateConnectionIcon() {
-      const icon = {}
-      if (this.connectionStatus === "disconnected") {
-        icon.color = "red"
-        icon.icon = "mdi-link-variant-off"
-      } else if (this.connectionStatus === "connected") {
-        icon.color = "green";
-        icon.icon = "mdi-link-variant";
-      } else {
-        icon.color = "blue";
-        icon.icon = "mdi-connection";
-      }
-      this.$emit("update-icon", icon)
+/**
+ * 再読み込み
+ */
+function reloadSpaceInfo() {
+  spaceClient.readOne(props.spaceId).then(result => {
+    if (result.status !== 200) {
+      return
     }
-  }
+    space.value = result.data
+    isOwner.value = (userId.value === space.value!.ownerId)
+
+    reloadQuestions()
+  })
 }
+
+/**
+ * 退出処理
+ */
+function onLeave() {
+  leaveSpace()
+  emit("close")
+}
+
+/**
+ * 送信処理
+ */
+function onSubmit(data) {
+  answerClient.answer({
+    questionId: data.questionId,
+    answers: data.answers
+  }).then(() => {
+    reloadQuestions()
+  })
+}
+
+
+const registerCell = useTemplateRef("registerCell")
+/**
+ * 質問の新規登録ボタン
+ */
+function onRegister(data) {
+  const endDate = new Date()
+
+  // TODO 回答期限の設定項目を追加する
+  endDate.setHours(endDate.getHours() + 6)
+
+  questionClient.create({
+    type: QUESTION_TYPE.SINGLE,
+    endDate: endDate,
+    ...data
+  }).then(result => {
+    if(result.status !== 201) {
+      return
+    }
+
+    registerExpanded.value = false
+
+    reloadQuestions()
+    registerCell.reset()
+  })
+}
+
+/**
+ * 再読み込みボタン
+ */
+function onClickReload() {
+  reloadQuestions()
+}
+
+/**
+ * 退室ボタン
+ */
+function onLeaveSpace() {
+  showDialog({
+    dialog: LyceeMessageDialog,
+    title: "確認",
+    persistent: true,
+    props: {
+      message: `スペース「${space.value!.name}」から退出しますか？`,
+      buttons: [
+        {text: "Cancel", color: "red", variant: "text"},
+        {text: "OK", color: "blue", variant: "text"}
+      ]
+    }
+  }).then(result => {
+    if (result === "OK") {
+      onLeave()
+    }
+  })
+}
+
+function reloadQuestions() {
+  const answerPromise = isOwner.value ?
+    answerClient.summaryInSpace(props.spaceId) :
+    answerClient.readAllInSpace()
+
+  Promise.all([
+    questionClient.readAll(),
+    answerPromise
+  ]).then(resultAll => {
+    const [resQuestions, resAnswers] = resultAll
+    questions.value = resQuestions.data.questions.map(it => {
+      return new QuestionEntity(
+        it.questionId,
+        it.type,
+        it.description,
+        it.answers,
+        /* isMultiple(仮置き) */it.type === QUESTION_TYPE.MULTIPLE,
+        Date.parse(it.endTime)
+      )
+    })
+
+    const hist: Record<string, any> = {}
+    for (const ans of resAnswers.data.history) {
+      hist[ans.questionId] = ans.answers
+    }
+    history.value = hist
+  })
+}
+
+/**
+ * QR表示ボタン
+ */
+function onClickQr() {
+  showDialog({
+    dialog: QrcodeDialog,
+    title: "スペースのQRコード",
+    props: {
+      spaceId: props.spaceId,
+    }
+  })
+}
+
+/**
+ * スペース退出
+ */
+function leaveSpace() {
+  eventSource?.close()
+}
+
+/**
+ * アイコン更新
+ */
+function updateConnectionIcon() {
+  const icons = {
+    disconnected: {color: "red", icon: "mdi-link-variant-off"},
+    connected: {color: "green", icon: "mdi-link-variant"},
+    connecting: {color: "blue", icon: "mdi-connection"}
+  } as const
+
+  const icon = icons[connectionStatus.value]
+
+  emit("update-icon", icon)
+}
+
 </script>
 
 <style scoped>

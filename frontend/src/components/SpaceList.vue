@@ -22,130 +22,117 @@ title="スペースの新規追加"
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import SpaceCard from '@/components/SpaceCard.vue'
 import {SpaceEntity} from '@/entity/SpaceEntity'
 import OpenSpaceDialog from '@/components/OpenSpaceDialog.vue'
 import SpaceDialog from '@/components/SpaceDialog.vue'
 import { SpaceClient } from '@/clients/api/SpaceClient'
-import * as util from '@/utils'
+import {getUserId} from '@/utils'
 import { BackdoorClient } from '@/clients/api/BackdoorClient'
 import LyceeMessageDialog from '@/components/common/LyceeMessageDialog.vue'
+import {inject, onMounted, ref} from "vue";
+import {useRoute} from "vue-router";
 
-export default {
-  name: 'SpaceList',
-  components: {
-    SpaceCard
-  },
-  inject: [
-    "showDialog"
-  ],
-  data() {
-    return {
-      spaceList: [],
+defineOptions({
+  name: "SpaceList"
+})
 
-      // クライアント
-      spaceClient: null,
-      backdoorClient: null
-    }
-  },
+const showDialog = inject("showDialog")
 
-  mounted () {
-    util.getUserId()
-    .then(userId => {
-      this.initialize(userId)
-    })
-  },
+const spaceList = ref<SpaceEntity[]>([])
 
-  methods: {
-    async initialize(userId) {
-      this.spaceClient = new SpaceClient(userId)
-      this.backdoorClient = new BackdoorClient(userId)
-      await this.reloadSpaceList()
-      await this.joinSpace()
-    },
+let spaceClient!: SpaceClient
+let backdoorClient!: BackdoorClient
 
-    async reloadSpaceList() {
-      const result = await this.spaceClient.readAll()
+onMounted(() => {
+  getUserId().then((id: string) => {
+    initialize(id)
+  })
+})
 
-      if (result.status !== 200) {
-        return
-      }
-      const list = []
-      for (const s of result.data.spaces) {
-        list.push(SpaceEntity.from({
-          ...s
-        }))
-      }
-      this.spaceList = list
-    },
-
-    /**
-     * スペース新規作成ダイアログ
-     */
-    showOpenSpaceDialog() {
-      this.showDialog({
-        dialog: OpenSpaceDialog,
-        title: "スペースの新規作成",
-      }).then(() => {
-        this.reloadSpaceList()
-      })
-    },
-
-    /**
-     * スペースの表示
-     * @param space
-     */
-    showSpaceDialog(space) {
-      this.showDialog({
-        dialog: SpaceDialog,
-        persistent: true,
-        title: space.name,
-        iconUse: true,
-        props: {
-          spaceId: space.id
-        }
-      })
-    },
-
-    async joinSpace() {
-      const spaceId = this.$route.query.key
-      if (!spaceId) {
-        return
-      }
-
-      if (this.spaceList.some(s => s.spaceId === spaceId)) {
-        // リストにあるスペースIDの時参加済みのため処理不要
-        return
-      }
-
-      // スペースの参加
-      const result = await this.spaceClient.join(spaceId)
-      let message
-      if (result.status === 204) {
-        // 登録済みの時
-        return
-      } else if (result.status === 200) {
-        message = "スペースに参加できるようになりました"
-      } else {
-        message = "エラーが発生しました"
-      }
-
-      // メッセージダイアログの表示
-      const selected = await this.showDialog({
-        dialog: LyceeMessageDialog,
-        props: {
-          message
-        }
-      })
-
-      if (result.status === 200 && selected === "OK") {
-        // スペース参加できてOKボタン押下時のみリロードが必要
-        await this.reloadSpaceList()
-      }
-    }
-  }
+async function initialize(userId: string) {
+  spaceClient = new SpaceClient(userId)
+  backdoorClient = new BackdoorClient(userId)
+  await reloadSpaceList()
+  await joinSpace()
 }
+
+async function reloadSpaceList() {
+  const result = await spaceClient.readAll()
+
+  if (result.status !== 200) {
+    return
+  }
+  const list = []
+  for (const s of result.data.spaces) {
+    list.push(SpaceEntity.from({...s}))
+  }
+  spaceList.value = list
+}
+
+const route = useRoute()
+
+/**
+ * スペースに参加
+ */
+async function joinSpace() {
+  const spaceId = route.query.key
+  if (!spaceId) return
+
+  if (spaceList.value.some(s => s.spaceId === spaceId)) {
+    // 参加済みの場合は何もしない
+    return
+  }
+
+  // 参加処理
+  const result = await spaceClient.join(spaceId)
+  if (result.status === 204) return
+
+  let message!: string
+  if (result.status === 200) {
+    message = "スペースに参加できるようになりました"
+  } else {
+    message = "エラーが発生しました"
+  }
+
+  showDialog({
+    dialog: LyceeMessagedialog,
+    props: {
+      message
+    }
+  }).then(selected => {
+    if (result.status === 200 && selected === "OK") {
+      reloadSpaceList()
+    }
+  })
+}
+
+/**
+ * スペースの新規作成
+ */
+function showOpenSpaceDialog() {
+  showDialog({
+    dialog: OpenSpaceDialog,
+    title: "スペースの新規作成",
+  }).then(() => {
+    // 新規作成後は再読み込み
+    reloadSpaceList()
+  })
+}
+
+function showSpaceDialog(space: SpaceEntity) {
+  showDialog({
+    dialog: SpaceDialog,
+    persistent: true,
+    title: space.name,
+    iconUse: true,
+    props: {
+      spaceId: space.id
+    }
+  })
+}
+
 </script>
 
 <style scoped>

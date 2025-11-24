@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
-import LyceeModalDialog from "@/components/common/dialog/LyceeModalDialog.vue";
+import LyceeModalDialog from "@/components/common/dialog/LyceeModalDialog.vue"
+
 import {type Component, markRaw, provide, ref} from "vue";
 
 type DialogProperty = {

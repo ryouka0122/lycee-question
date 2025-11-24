@@ -15,47 +15,43 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { getUserId } from '@/utils'
 import { SpaceClient } from '@/clients/api/SpaceClient'
+import {onMounted, ref} from "vue";
+import {useRoute} from "vue-router";
 
-export default {
-  name: 'QrCodeJoinView',
-  data() {
-    return {
-      spaceId: null,
-      userId: null,
+defineOptions({
+  name: "QrCodeJoinView",
+})
 
-      isError: false,
-      isComplete: false,
+const route = useRoute()
 
-      /**/
-      spaceClient: null
+const userId = ref<string|null>(null)
+const isError = ref(false)
+const isComplete = ref(false)
+
+const spaceClient = ref<SpaceClient|null>(null)
+
+onMounted(() => {
+  getUserId().then((id: string) => {
+    userId.value = id
+    spaceClient.value = new SpaceClient(userId.value);
+
+    if (route.query.key) {
+      spaceClient.value.join(route.query.key).then(result => {
+        if (result.status !== 200) {
+          isError.value = true
+        } else {
+          isComplete.value = true
+        }
+      })
+    } else {
+      isError.value = true
     }
-  },
-  computed: {
+  })
+})
 
-  },
-  mounted () {
-    getUserId().then(userId => {
-      this.userId = userId
-      this.spaceClient = new SpaceClient(userId)
-      if (this.$route.query.key) {
-        this.spaceClient.join(this.$route.query.key).then(result => {
-          if(result.status !== 200) {
-            this.isError = true
-          } else {
-            this.isComplete = true
-          }
-        })
-      } else {
-        this.isError = true
-      }
-    })
-
-  }
-
-}
 </script>
 
 <style scoped>

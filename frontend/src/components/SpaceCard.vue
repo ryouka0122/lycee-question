@@ -11,30 +11,31 @@
   </v-container>
 </template>
 
-<script>
-import moment from 'moment'
+<script setup lang="ts">
 import { SpaceEntity } from '@/entity/SpaceEntity'
+import {formatDate} from "@/utils"
+import {computed} from "vue";
 
-export default {
-  name: 'SpaceCard',
-  props: {
-    entity: {
-      type: SpaceEntity,
-      required: true
-    },
-    size: {
-      type: Number,
-      default: 150
-    }
-  },
-  computed: {
-    subtitle () {
-      const open = moment(this.entity.openedDate).format("MM/DD hh:mm")
-      const close = moment(this.entity.closeDate).format("MM/DD hh:mm")
-      return `開設日時：${open} / 終了日時：${close}`
-    }
+defineOptions({
+  name: "SpaceCard"
+})
+
+const props = withDefaults(defineProps<{
+  entity: SpaceEntity,
+  size?: number
+}>(),{
+  size: 150
+})
+
+const subtitle = computed(() => {
+  if (!props.entity) {
+    return ""
   }
-}
+  const open = formatDate(props.entity.openedDate, "MM/DD hh:mm")
+  const close = formatDate(props.entity.closeDate, "MM/DD hh:mm")
+  return `開始日時：${open} / 終了日時：${close}`
+})
+
 </script>
 
 <style scoped lang="scss">

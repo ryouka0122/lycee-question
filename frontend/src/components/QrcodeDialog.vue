@@ -35,44 +35,43 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import QRCodeVue3 from 'qrcode-vue3'
+import {computed, ref} from "vue";
 
-export default {
-  name: 'QrcodeDialog',
-  components: {
-    QRCodeVue3
-  },
-  props: {
-    spaceId: { type: String, required: true }
-  },
-  data() {
-    return {
-      showSnackbar: false,
-      copyText: null
-    }
-  },
-  computed: {
-    qrCodeUrl() {
-      const url = new URL(window.location.href)
-      return `${url.origin}/?key=${this.spaceId}`
-    }
-  },
-  methods: {
-    onClickClose() {
-      this.$emit("close")
-    },
-    onClickCopy() {
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(this.qrCodeUrl)
-        this.copyText = "コピーしました"
-      } else {
-        this.copyText = "コピーできませんでした"
-      }
-      this.showSnackbar = true
-    }
-  }
+defineOptions({
+  name: "QrcodeDialog",
+})
+
+const emit = defineEmits(["close"])
+
+const { spaceId } = defineProps({
+  spaceId: { type: String, require: true, default: "" }
+})
+
+const showSnackbar = ref(false)
+const copyText = ref("")
+
+const qrCodeUrl = computed(() => {
+  const url = new URL(window.location.href)
+  return `${url.origin}/?key=${spaceId}`
+})
+
+function onClickClose() {
+  emit("close")
 }
+
+function onClickCopy() {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(qrCodeUrl.value)
+    copyText.value = "コピーしました"
+  } else {
+    copyText.value = "コピーできませんでした"
+  }
+
+  showSnackbar.value = true
+}
+
 </script>
 
 <style scoped>
