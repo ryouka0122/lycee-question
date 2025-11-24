@@ -1,3 +1,35 @@
+<script setup lang="ts">
+defineOptions({
+  name: "LyceeMessageDialog",
+})
+
+const emit = defineEmits(["close"])
+
+type ButtonParam = {
+  id: string
+  text: string
+  color: string
+  variant:  "elevated" | "flat" | "outlined" | "plain" | "text" | "tonal" | undefined
+  click: (target: string) => boolean
+}
+
+defineProps<{
+  message: string,
+  buttons: ButtonParam[]
+}>();
+
+function onButtonClick(target: ButtonParam, e: MouseEvent) {
+  const callback = target.click || function () {return true}
+  const message = target.id || target.text
+  const isCanceled = !callback(message)
+
+  if (isCanceled) {
+    e.preventDefault()
+  } else {
+    emit("close", message)
+  }
+}
+</script>
 <template>
   <div class="dialog__content">
     <!-- メッセージ領域 -->
@@ -12,10 +44,10 @@
           <v-btn
             v-for="(button, index) in buttons"
             :key="index"
-            @click="onButtonClick(button)"
             class="dialog__button"
             :variant="button.variant"
             :color="button.color"
+            @click="onButtonClick(button, $event)"
           >
             {{button.text}}
           </v-btn>
@@ -24,43 +56,6 @@
     </div>
   </div>
 </template>
-
-<script>
-
-export default {
-  name: 'LyceeMessageDialog',
-  props: {
-    message: {
-      type: String,
-      required: true
-    },
-    buttons: {
-      type: Array,
-      default: () => [{
-        text: 'OK',
-        color: 'blue',
-        variant: "outlined",
-        click: () => true
-      }]
-    }
-  },
-  methods: {
-    onButtonClick(target, e) {
-      const callback = target.click || function () {return true}
-
-      const message = target.id || target.text
-      const isCanceled = !callback(message)
-
-      if (isCanceled) {
-        e.preventDefault()
-      } else {
-        this.$emit('close', message)
-      }
-    }
-  }
-}
-</script>
-
 <style scoped>
 .dialog__content {
   padding: 15px;

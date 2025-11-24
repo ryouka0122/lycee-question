@@ -8,7 +8,7 @@
       </v-row>
 
       <!-- 状態アイコン -->
-      <template v-slot:actions>
+      <template #actions>
         <v-icon icon="mdi-text-box-edit-outline">
         </v-icon>
       </template>
@@ -44,11 +44,11 @@
       <v-container>
         <v-row>
           <v-text-field
+            v-if="0"
             variant="outlined"
             density="compact"
             label="回答期限"
             style="width: 50px;"
-            v-if="0"
           ></v-text-field>
           <div class="text-grey">回答期限は登録から6時間です</div>
           <v-spacer></v-spacer>
@@ -63,55 +63,53 @@
   </v-expansion-panel>
 </template>
 
-<script>
+<script setup lang="ts">
+import {computed, onMounted, ref} from "vue";
 
 const ANSWER_SIZE = 5
 
-export default {
-  name: 'QuestionRegisterCell',
-  emits: [
-    "register"
-  ],
-  props: {
-    modelValue: { type: Boolean, default: false}
-  },
-  data() {
-    return {
-      description: null,
-      answers: null
-    }
-  },
-  computed: {
-    submitProperties() {
-      const canSubmit = !!this.description &&
-        this.answers.filter(a => a!== "").length >= 2
+defineOptions({
+  name: "QuestionRegisterCell",
+})
 
-      return {
-        flat: true,
-        disabled: !canSubmit,
-        color: canSubmit ? "primary" : "gray"
-      }
-    },
-  },
-  mounted () {
-    this.reset()
-  },
-  methods: {
-    reset() {
-      this.description = ""
-      this.answers = []
-      for (let i = 0; i < ANSWER_SIZE; i++) {
-        this.answers.push("")
-      }
-    },
-    onRegister() {
-      this.$emit("register", {
-        description: this.description,
-        answers: this.answers.filter(a => a !== "")
-      })
-    }
+defineProps({
+  modelValue: { type: Boolean, default: false }
+})
+
+const emit = defineEmits(["register", "update:modelValue"])
+
+const description = ref("")
+const answers = ref<string[]>([])
+
+const submitProperties = computed(() => {
+  const canSubmit = !!description.value &&
+    answers.value.filter(a => a !== "").length >= 2
+  return {
+    flat: true,
+    disabled: !canSubmit,
+    color: canSubmit ? "primary" : "gary"
+  }
+})
+
+onMounted(() => {
+  reset()
+})
+
+function reset() {
+  description.value = ""
+  answers.value = []
+  for(let i = 0; i < ANSWER_SIZE; i++) {
+    answers.value.push("")
   }
 }
+
+function onRegister() {
+  emit("register", {
+    description: description.value,
+    answers: answers.value.filter(a => a !== "")
+  })
+}
+
 </script>
 
 <style scoped>

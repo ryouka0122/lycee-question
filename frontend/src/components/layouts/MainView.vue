@@ -1,3 +1,8 @@
+<script setup lang="ts">
+defineOptions({
+  name: "MainView"
+})
+</script>
 <template>
   <v-main>
     <!-- ヘッダー -->
@@ -15,22 +20,6 @@
 
   </v-main>
 </template>
-
-<script>
-
-export default {
-  name: 'MainView',
-  data() {
-    return {
-    }
-  },
-  mounted () {
-  },
-  methods: {
-  }
-}
-</script>
-
 <style scoped>
 
 </style>

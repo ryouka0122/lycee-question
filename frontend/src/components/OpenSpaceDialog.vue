@@ -1,14 +1,9 @@
 <template>
-  <!--  :show="show"
-    title="スペースの新規作成"
-    ok="新規作成"
-    :onClick="onClick"
-   -->
   <div class="osd__content">
     <v-file-input
       ref="fileInput"
-      style="display: none"
       v-model="selectedFile"
+      style="display: none"
       @click="(e) => e.target.value=''"
     ></v-file-input>
     <!--    <v-img
@@ -37,10 +32,10 @@
     </v-img>
     -->
     <v-text-field
+      v-model="spaceName"
       style="padding-top: 10px"
       label="スペース名"
       variant="outlined"
-      v-model="spaceName"
     >
     </v-text-field>
 
@@ -66,74 +61,48 @@
   </div>
 </template>
 
-<script>
-
-import * as util from '@/utils'
+<script setup lang="ts">
+import { getUserId, getCurrentDate } from "@/utils"
 import { SpaceClient } from '@/clients/api/SpaceClient'
+import {onMounted, ref} from "vue";
 
-export default {
-  name: 'OpenSpaceDialog',
-  emits: [
-    "close"
-  ],
-  data() {
-    return {
-      useImage: false,
-      selectedFile: [],
-      spaceName: null,
-      endTime: null,
+defineOptions({
+  name: "OpenSpaceDialog",
+});
 
-      // クライアント
-      spaceClient: null
+const emit = defineEmits(["close"])
+
+const spaceName = ref<string|null>(null)
+const endTime = ref<Date|null>(null)
+const spaceClient = ref<SpaceClient>(null)
+
+
+onMounted(() => {
+  const startTime = new Date()
+  endTime.value = new Date(new Date().setTime(startTime.getTime() + 3))
+
+  getUserId().then((userId: string) => {
+    spaceClient.value = new SpaceClient(userId);
+  })
+})
+
+function onClickClose() {
+  emit("close", false)
+}
+
+function onClick() {
+  const closeDate = getCurrentDate()
+  closeDate.setDate(closeDate.getDate() + 3)
+
+  spaceClient.value.create(spaceName.value, closeDate).then(result => {
+    if (result.status === 201) {
+      emit("close", true)
+    } else {
+      // TODO エラー処理を作る
     }
-  },
-  computed: {
-    imagePath() {
-      return this.selectedFile[0] ? URL.createObjectURL(this.selectedFile[0]) : null
-    }
-  },
-  watch: {
-    show(newValue, oldValue) {
-      if (newValue && !oldValue) {
-        this.selectedFile = []
-        this.spaceName = null
-      }
-    }
-  },
-  mounted () {
-    const startDate = new Date()
-    this.endTime = new Date(new Date().setDate(startDate.getDate() + 3))
-
-    util.getUserId()
-      .then(userId => {
-        this.spaceClient = new SpaceClient(userId)
-      })
-  },
-  methods: {
-    onClickSelectImage() {
-      this.$refs.fileInput.click()
-    },
-    onClickClose() {
-      this.$emit("close", false)
-    },
-    onClick() {
-      const closeDate = util.getCurrentDate()
-      closeDate.setDate(closeDate.getDate() + 3)
-
-      this.spaceClient.create(this.spaceName, closeDate, this.selectedFile)
-        .then(result => {
-          if (result.status === 201) {
-            this.$emit("close", true)
-          } else {
-            // error
-          }
-
-        })
-    }
-  }
+  })
 }
 </script>
-
 <style scoped>
 .osd__content {
   width: 300px;

@@ -1,3 +1,53 @@
+
+<script setup lang="ts">
+import {computed, ref} from "vue";
+
+defineOptions({
+  name: "LyceeModalDialog",
+})
+
+const emit = defineEmits(["close", "update:show"])
+
+const props = defineProps({
+  show: { type: Boolean, required: true },
+  fullScreen: { type: Boolean, default: false },
+  persistent: { type: Boolean, default: false },
+  title: { type: String, default: ""},
+  iconUse: { type: Boolean, default: false }
+})
+
+type DialogIconInfo = {
+  color: string,
+  icon: string
+}
+
+const iconData = ref<DialogIconInfo>({
+  color: "gray",
+  icon: "mdi-exclamation-thick"
+})
+
+const icon = computed(() => {
+  return iconData
+})
+
+function close(result: object) {
+  if (props.show) {
+    emit("update:show", false)
+  }
+  emit("close", result)
+}
+
+function onClickOutside() {
+  if (props.persistent) return
+  close({})
+}
+
+function onUpdateIcon(value: DialogIconInfo) {
+  iconData.value.color = value.color
+  iconData.value.icon = value.icon
+}
+
+</script>
 <template>
   <v-dialog
     :model-value="show"
@@ -24,64 +74,13 @@
       <!-- ボディ -->
       <main>
         <slot
-          v-bind:onClose="close"
-          v-bind:onUpdateIcon="onUpdateIcon"
+          :on-close="close"
+          :on-update-icon="onUpdateIcon"
         ></slot>
       </main>
     </div>
   </v-dialog>
 </template>
-
-<script>
-export default {
-  name: 'LyceeModalDialog',
-  emits: [
-    "close", "update:show"
-  ],
-  props: {
-    show: { type: Boolean, required: true },
-    fullScreen: { type: Boolean, default: false },
-    persistent: { type: Boolean, default: false },
-    title: { type: String, default: ""},
-    iconUse: { type: Boolean, default: false }
-  },
-  data() {
-    return {
-      iconData: {
-        color: "gray",
-        icon: "mdi-exclamation-thick"
-      }
-    }
-  },
-  mounted () {
-  },
-  computed: {
-    icon() {
-      return this.iconData
-    }
-  },
-  methods: {
-    close(result) {
-      if(this.show) {
-        this.$emit("update:show", false)
-      }
-      this.$emit("close", result)
-    },
-    onClickOutside() {
-      if (this.persistent) return
-      this.close()
-    },
-    onUpdateIcon(value) {
-      this.iconData = {
-        color: value.color,
-        icon: value.icon
-      }
-    }
-  },
-
-}
-</script>
-
 <style scoped>
 .lmd__content {
   background-color: white;

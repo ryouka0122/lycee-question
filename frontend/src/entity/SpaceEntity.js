@@ -10,8 +10,8 @@ export class SpaceEntity {
     this.roomImg = roomImg
   }
   static from({id, name, desc, openedTime, closeTime}) {
-    const openedDate = Date.parse(openedTime)
-    const closeDate = Date.parse(closeTime)
+    const openedDate = new Date(Date.parse(openedTime))
+    const closeDate = new Date(Date.parse(closeTime))
     return new SpaceEntity(
       id, name, desc, openedDate, closeDate, null
     )

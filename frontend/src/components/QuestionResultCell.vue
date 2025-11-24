@@ -6,13 +6,14 @@
       <!-- タイトルと期限 -->
       <v-row justify="space-between">
         <v-col class="text-left">{{title}} / {{question.isMultiple ? "複数選択" : "単選択"}} (回答数: {{total}})</v-col>
-        <v-col class="text-right"
+        <v-col
+class="text-right"
                style="padding-right: 30px"
         >{{ printDeadline(question.closeTime) }}</v-col>
       </v-row>
 
       <!-- 状態アイコン -->
-      <template v-slot:actions>
+      <template #actions>
         <v-icon v-bind="questionIcon">
         </v-icon>
       </template>
@@ -45,8 +46,10 @@
   </v-expansion-panel>
 </template>
 
-<script>
+<script setup lang="ts">
 import { QuestionEntity } from '@/entity/QuestionEntity'
+import {computed, onMounted, ref} from "vue";
+import {formatDate} from "@/utils"
 
 const GAUGE_COLOR = [
   '#ffa0a0',
@@ -56,94 +59,80 @@ const GAUGE_COLOR = [
   '#ff9dff'
 ]
 
-export default {
-  name: 'QuestionResultCell',
-  props: {
-    title: {type: String, required: true },
-    question: {
-      type: QuestionEntity,
-      required: true
-    },
-    history: {
-      type: Object,
-      default: () => {}
-    }
-  },
+defineOptions({
+  name: "QuestionResultCell",
+})
 
-  data() {
+const props = defineProps<{
+  title: string,
+  question: QuestionEntity,
+  history: Record<string, number>
+}>()
+
+const currentTime = ref(new Date())
+const isClosed = ref(true)
+
+const questionIcon = computed(() => {
+  if (isClosed.value) {
+    // 期限切れ
     return {
-      currentTime: new Date().getTime(),
-      isClosed: true,
-      selectedIndexes: []
+      color: "red",
+      icon: "mdi-check-bold"
     }
-  },
 
-  computed: {
-    questionIcon() {
-      if (this.isClosed) {
-        // 期限切れ
-        return {
-          color: "red",
-          icon: "mdi-check-bold"
-        }
+  } else if (Object.keys(props.history).length > 0) {
+    // 期限内回答済み
+    return {
+      color: "light-blue darken-3",
+      icon: "mdi-checkbox-marked-circle-outline"
+    }
 
-      } else if (this.history.length > 0) {
-        // 期限内回答済み
-        return {
-          color: "light-blue darken-3",
-          icon: "mdi-checkbox-marked-circle-outline"
-        }
+  } else {
+    // 期限内未回答
+    return {
+      color: "green",
+      icon: "mdi-clock-time-three-outline"
+    }
+  }
+})
 
-      } else {
-        // 期限内未回答
-        return {
-          color: "green",
-          icon: "mdi-clock-time-three-outline"
-        }
-      }
-    },
-    total() {
-      if (!this.history) return 0
-      let ttl = 0
-      for (let x in this.history) {
-        ttl += this.history[x] + 0
-      }
-      return ttl
-    },
-  },
+const total = computed(() => {
+  if (!props.history) return 0
+  let total = 0
+  for (const key in Object.keys(props.history)) {
+    total += props.history[key] ?? 0
+  }
+  return total
+})
 
-  mounted() {
-    this.isClosed = this.question.closeTime < this.currentTime
-  },
+onMounted(() => {
+  isClosed.value = (props.question.closeTime.getTime() < currentTime.value.getTime())
+})
 
-  methods: {
-    getCount(answerId) {
-      if (!this.history) return 0
-      return this.history[answerId] || 0
-    },
-    gauge (answerId, index) {
-      const rate = 100 * this.getCount(answerId) / this.total
-      const color = GAUGE_COLOR[index % GAUGE_COLOR.length]
 
-      return {
-        background: `linear-gradient(
+function getCount(answerId: string) {
+  if (!props.history) return 0
+  return props.history[answerId] || 0
+}
+
+function gauge(answerId: string, index: number) {
+  const rate = 100 * getCount(answerId) / total.value
+  const color = GAUGE_COLOR[index % GAUGE_COLOR.length]
+
+  return {
+    background: `linear-gradient(
           90deg,
           ${color} 0%, ${color} calc(${rate}%),
           lightgray calc(${rate}%),lightgray 100%
         )`
-      }
-    },
-
-    printDeadline(closeTime) {
-      if (this.isClosed) {
-        return "終了"
-      }
-      const date = new Date()
-      date.setTime(closeTime)
-      return "期日：" + (1+date.getMonth()) + "/" + date.getDate() +
-        " " + date.getHours() + ":" + date.getMinutes()
-    },
   }
+}
+
+function printDeadline(closeTime: Date) {
+  if (isClosed.value) {
+    return "終了"
+  }
+  return formatDate(closeTime, "期日：MM/DD hh:mm")
 }
 </script>
 

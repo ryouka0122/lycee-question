@@ -5,13 +5,14 @@
       <!-- タイトルと期限 -->
       <v-row justify="space-between">
         <v-col class="text-left">{{title}} / {{question.isMultiple ? "複数選択" : "単選択"}}</v-col>
-        <v-col class="text-right"
+        <v-col
+class="text-right"
                style="padding-right: 30px"
         >{{ printDeadline(question.closeTime) }}</v-col>
       </v-row>
 
       <!-- 状態アイコン -->
-      <template v-slot:actions>
+      <template #actions>
         <v-icon v-bind="questionIcon">
         </v-icon>
       </template>
@@ -54,111 +55,99 @@
   </v-expansion-panel>
 </template>
 
-<script>
+<script setup lang="ts">
 import { QuestionEntity } from '@/entity/QuestionEntity'
+import {computed, onMounted, ref} from "vue";
+import { formatDate } from "@/utils"
 
-export default {
-  name: 'QuestionCell',
-  emits: [
-    "send"
-  ],
-  props: {
-    title: {type: String, required: true },
-    question: {
-      type: QuestionEntity,
-      required: true
-    },
-    history: {
-      type: Array,
-      default: () => []
-    }
-  },
-  data() {
+defineOptions({
+  name: "QuestionCell",
+})
+
+const emit = defineEmits("send")
+
+const props = defineProps<{
+  title: string,
+  question: QuestionEntity,
+  history: number[]|number
+}>()
+
+const currentTime = ref(new Date())
+const isClosed = ref(true)
+const selectedIndexes = ref<number[] | number>([])
+
+const disableSelect = computed(() => {
+  return isClosed.value || props.history.length > 0
+})
+
+// const optionState = computed(() => {
+//   return {
+//     disabled: disableSelect.value
+//   }
+// })
+
+const buttonState = computed(() => {
+  return {
+    disabled: disableSelect.value,
+    variant: "outlined",
+    color: disableSelect.value ? "" : "primary"
+  }
+})
+
+const buttonText = computed(() => {
+  return isClosed.value ? "終了" : (props.history.length > 0 ? "回答済み" : "送信")
+})
+
+const questionIcon = computed(() => {
+  if (isClosed.value) {
+    // 期限切れ
     return {
-      currentTime: new Date().getTime(),
-      isClosed: true,
-      selectedIndexes: []
+      color:"red",
+      icon: "mdi-check-bold"
     }
-  },
-  computed: {
-    disableSelect() {
-      return this.isClosed || this.history.length > 0
-    },
-    optionState() {
-      return {
-        disabled: this.disableSelect
-      }
-    },
-    buttonState() {
-      return {
-          disabled: this.disableSelect,
-          variant: 'outlined',
-          color: this.disableSelect ? '' : 'primary'
-      }
-    },
-    buttonText() {
-      return this.isClosed ? '終了' :
-        (this.history.length > 0 ? '回答済み' : '送信')
-    },
-    questionIcon() {
-      if (this.isClosed) {
-        // 期限切れ
-        return {
-          color: "red",
-          icon: "mdi-check-bold"
-        }
-
-      } else if (this.history.length > 0) {
-        // 期限内回答済み
-        return {
-          color: "light-blue darken-3",
-          icon: "mdi-checkbox-marked-circle-outline"
-        }
-
-      } else {
-        // 期限内未回答
-        return {
-          color: "green",
-          icon: "mdi-clock-time-three-outline"
-        }
-      }
-    },
-  },
-  mounted() {
-    this.isClosed = this.question.closeTime < this.currentTime
-
-    if (this.history) {
-      if (this.question.isMultiple) {
-        this.selectedIndexes = this.history
-      } else {
-        this.selectedIndexes = this.history[0]
-      }
+  } else if (props.history.length > 0) {
+    // 期限内回答済み
+    return {
+      color: "light-blue darken-3",
+      icon: "mdi-checkbox-marked-circle-outline"
     }
-  },
-  methods: {
-    printDeadline(closeTime) {
-      if (this.isClosed) {
-        return "終了"
-      }
-      const date = new Date()
-      date.setTime(closeTime)
-      return "期日：" + (1+date.getMonth()) + "/" + date.getDate() +
-        " " + date.getHours() + ":" + date.getMinutes()
-    },
-    onSend() {
-      let answers
-      if (this.selectedIndexes.isArray) {
-        answers = this.selectedIndexes
-      } else {
-        answers = [this.selectedIndexes]
-      }
-      this.$emit("send", {
-        questionId: this.question.id,
-        answers: answers
-      })
+  } else {
+    // 期限内未回答
+    return {
+      color: "green",
+      icon: "mdi-clock-time-three-outline"
     }
   }
+})
+
+onMounted(() => {
+  isClosed.value = (props.question.closeTime < currentTime.value)
+
+  if (props.history) {
+    // TODO selectedIndexesの使い方が気持ち悪い
+    if (props.question.isMultiple) {
+      selectedIndexes.value = props.history
+    } else {
+      selectedIndexes.value = props.history[0]
+    }
+  }
+})
+
+function printDeadline(closeTime: Date) {
+  if (isClosed.value) {
+    return "終了"
+  }
+  return formatDate(closeTime, "期日：MM/DD hh:mm")
 }
+
+function onSend() {
+  const answers = selectedIndexes.value.isArray ? selectedIndexes.value : [selectedIndexes.value]
+  emit("send", {
+    questionId: props.question.id,
+    answers
+  })
+}
+
 </script>
 
 <style scoped>
