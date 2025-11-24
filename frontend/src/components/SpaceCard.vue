@@ -12,8 +12,8 @@
 </template>
 
 <script setup lang="ts">
-import { SpaceEntity } from '@/entity/SpaceEntity'
-import {formatDate} from "@/utils"
+import { SpaceEntity } from '@/types/SpaceEntity'
+import {formatDate} from "@/utils.ts"
 import {computed} from "vue";
 
 defineOptions({

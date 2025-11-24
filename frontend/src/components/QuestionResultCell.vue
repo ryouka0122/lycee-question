@@ -47,9 +47,9 @@ class="text-right"
 </template>
 
 <script setup lang="ts">
-import { QuestionEntity } from '@/entity/QuestionEntity'
+import { QuestionEntity } from '@/types/QuestionEntity.ts'
 import {computed, onMounted, ref} from "vue";
-import {formatDate} from "@/utils"
+import {formatDate} from "@/utils.ts"
 
 const GAUGE_COLOR = [
   '#ffa0a0',

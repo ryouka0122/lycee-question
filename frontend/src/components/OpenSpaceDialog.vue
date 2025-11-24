@@ -4,7 +4,7 @@
       ref="fileInput"
       v-model="selectedFile"
       style="display: none"
-      @click="(e) => e.target.value=''"
+      @click="(e) => (e.target.value = '')"
     ></v-file-input>
     <!--    <v-img
       width="200"
@@ -46,15 +46,13 @@
         <v-row>
           <v-spacer></v-spacer>
           <v-btn
-            style="margin-right: 10px;"
+            style="margin-right: 10px"
             variant="outlined"
             color="red"
             @click="onClickClose"
-          >閉じる</v-btn>
-          <v-btn
-            color="blue"
-            @click="onClick"
-          >新規登録</v-btn>
+            >閉じる</v-btn
+          >
+          <v-btn color="blue" @click="onClick">新規登録</v-btn>
         </v-row>
       </v-container>
     </div>
@@ -62,45 +60,44 @@
 </template>
 
 <script setup lang="ts">
-import { getUserId, getCurrentDate } from "@/utils"
-import { SpaceClient } from '@/clients/api/SpaceClient'
-import {onMounted, ref} from "vue";
+import { getUserId, getCurrentDate } from "@/utils.ts";
+import { SpaceClient } from "@/clients/api/SpaceClient.ts";
+import { onMounted, ref } from "vue";
 
 defineOptions({
   name: "OpenSpaceDialog",
 });
 
-const emit = defineEmits(["close"])
+const emit = defineEmits(["close"]);
 
-const spaceName = ref<string|null>(null)
-const endTime = ref<Date|null>(null)
-const spaceClient = ref<SpaceClient>(null)
-
+const spaceName = ref<string | null>(null);
+const endTime = ref<Date | null>(null);
+const spaceClient = ref<SpaceClient>(null);
 
 onMounted(() => {
-  const startTime = new Date()
-  endTime.value = new Date(new Date().setTime(startTime.getTime() + 3))
+  const startTime = new Date();
+  endTime.value = new Date(new Date().setTime(startTime.getTime() + 3));
 
   getUserId().then((userId: string) => {
     spaceClient.value = new SpaceClient(userId);
-  })
-})
+  });
+});
 
 function onClickClose() {
-  emit("close", false)
+  emit("close", false);
 }
 
 function onClick() {
-  const closeDate = getCurrentDate()
-  closeDate.setDate(closeDate.getDate() + 3)
+  const closeDate = getCurrentDate();
+  closeDate.setDate(closeDate.getDate() + 3);
 
-  spaceClient.value.create(spaceName.value, closeDate).then(result => {
+  spaceClient.value.create(spaceName.value, closeDate).then((result) => {
     if (result.status === 201) {
-      emit("close", true)
+      emit("close", true);
     } else {
       // TODO エラー処理を作る
     }
-  })
+  });
 }
 </script>
 <style scoped>

@@ -1,20 +1,13 @@
 <template>
   <div class="text-center">
     <v-list>
-      <v-list-item
-        v-for="s in spaceList" :key="s.id"
-      >
-        <space-card
-          :entity="s"
-          @click.stop="showSpaceDialog(s)"
-        ></space-card>
+      <v-list-item v-for="s in spaceList" :key="s.id">
+        <space-card :entity="s" @click.stop="showSpaceDialog(s)"></space-card>
       </v-list-item>
 
       <v-list-item>
         <v-container>
-          <v-card
-title="スペースの新規追加"
-            @click="showOpenSpaceDialog">
+          <v-card title="スペースの新規追加" @click="showOpenSpaceDialog">
           </v-card>
         </v-container>
       </v-list-item>
@@ -23,89 +16,85 @@ title="スペースの新規追加"
 </template>
 
 <script setup lang="ts">
-import SpaceCard from '@/components/SpaceCard.vue'
-import {SpaceEntity} from '@/entity/SpaceEntity'
-import OpenSpaceDialog from '@/components/OpenSpaceDialog.vue'
-import SpaceDialog from '@/components/SpaceDialog.vue'
-import { SpaceClient } from '@/clients/api/SpaceClient'
-import {getUserId} from '@/utils'
-import { BackdoorClient } from '@/clients/api/BackdoorClient'
-import LyceeMessageDialog from '@/components/common/LyceeMessageDialog.vue'
-import {inject, onMounted, ref} from "vue";
-import {useRoute} from "vue-router";
+import SpaceCard from "@/components/SpaceCard.vue";
+import { SpaceEntity } from "@/types/SpaceEntity";
+import OpenSpaceDialog from "@/components/OpenSpaceDialog.vue";
+import SpaceDialog from "@/components/SpaceDialog.vue";
+import { SpaceClient } from "@/clients/api/SpaceClient.ts";
+import { getUserId } from "@/utils.ts";
+import { inject, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 
 defineOptions({
-  name: "SpaceList"
-})
+  name: "SpaceList",
+});
 
-const showDialog = inject("showDialog")
+const showDialog = inject("showDialog");
 
-const spaceList = ref<SpaceEntity[]>([])
+const spaceList = ref<SpaceEntity[]>([]);
 
-let spaceClient!: SpaceClient
-let backdoorClient!: BackdoorClient
+let spaceClient!: SpaceClient;
 
 onMounted(() => {
   getUserId().then((id: string) => {
-    initialize(id)
-  })
-})
+    initialize(id);
+  });
+});
 
 async function initialize(userId: string) {
-  spaceClient = new SpaceClient(userId)
-  backdoorClient = new BackdoorClient(userId)
-  await reloadSpaceList()
-  await joinSpace()
+  spaceClient = new SpaceClient(userId);
+  await reloadSpaceList();
+  await joinSpace();
 }
 
 async function reloadSpaceList() {
-  const result = await spaceClient.readAll()
+  const result = await spaceClient.readAll();
 
   if (result.status !== 200) {
-    return
+    return;
   }
-  const list = []
+  const list = [];
   for (const s of result.data.spaces) {
-    list.push(SpaceEntity.from({...s}))
+    list.push(SpaceEntity.from({ ...s }));
   }
-  spaceList.value = list
+  spaceList.value = list;
 }
 
-const route = useRoute()
+const route = useRoute();
 
 /**
  * スペースに参加
  */
 async function joinSpace() {
-  const spaceId = route.query.key
-  if (!spaceId) return
+  const spaceId = route.query.key;
+  if (!spaceId) return;
 
-  if (spaceList.value.some(s => s.spaceId === spaceId)) {
+  if (spaceList.value.some((s) => s.spaceId === spaceId)) {
     // 参加済みの場合は何もしない
-    return
+    return;
   }
 
   // 参加処理
-  const result = await spaceClient.join(spaceId)
-  if (result.status === 204) return
+  const result = await spaceClient.join(spaceId);
+  if (result.status === 204) return;
 
-  let message!: string
+  let message!: string;
   if (result.status === 200) {
-    message = "スペースに参加できるようになりました"
+    message = "スペースに参加できるようになりました";
   } else {
-    message = "エラーが発生しました"
+    message = "エラーが発生しました";
   }
 
   showDialog({
     dialog: LyceeMessagedialog,
     props: {
-      message
-    }
-  }).then(selected => {
+      message,
+    },
+  }).then((selected) => {
     if (result.status === 200 && selected === "OK") {
-      reloadSpaceList()
+      reloadSpaceList();
     }
-  })
+  });
 }
 
 /**
@@ -117,8 +106,8 @@ function showOpenSpaceDialog() {
     title: "スペースの新規作成",
   }).then(() => {
     // 新規作成後は再読み込み
-    reloadSpaceList()
-  })
+    reloadSpaceList();
+  });
 }
 
 function showSpaceDialog(space: SpaceEntity) {
@@ -128,13 +117,10 @@ function showSpaceDialog(space: SpaceEntity) {
     title: space.name,
     iconUse: true,
     props: {
-      spaceId: space.id
-    }
-  })
+      spaceId: space.id,
+    },
+  });
 }
-
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>
