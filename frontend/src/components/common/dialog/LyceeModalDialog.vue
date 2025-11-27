@@ -1,52 +1,46 @@
-
 <script setup lang="ts">
-import {computed, ref} from "vue";
+import { ref } from "vue";
 
 defineOptions({
   name: "LyceeModalDialog",
-})
+});
 
-const emit = defineEmits(["close", "update:show"])
+const emit = defineEmits(["close", "update:show"]);
 
 const props = defineProps({
   show: { type: Boolean, required: true },
   fullScreen: { type: Boolean, default: false },
   persistent: { type: Boolean, default: false },
-  title: { type: String, default: ""},
-  iconUse: { type: Boolean, default: false }
-})
+  title: { type: String, default: "" },
+  iconUse: { type: Boolean, default: false },
+});
 
-type DialogIconInfo = {
-  color: string,
-  icon: string
-}
+export type DialogIconInfo = {
+  color: string;
+  icon: string;
+};
 
 const iconData = ref<DialogIconInfo>({
   color: "gray",
-  icon: "mdi-exclamation-thick"
-})
-
-const icon = computed(() => {
-  return iconData
-})
+  icon: "mdi-exclamation-thick",
+});
 
 function close(result: object) {
   if (props.show) {
-    emit("update:show", false)
+    emit("update:show", false);
   }
-  emit("close", result)
+  emit("close", result);
 }
 
 function onClickOutside() {
-  if (props.persistent) return
-  close({})
+  if (props.persistent) return;
+  close({});
 }
 
 function onUpdateIcon(value: DialogIconInfo) {
-  iconData.value.color = value.color
-  iconData.value.icon = value.icon
+  console.log("update icon::", value);
+  iconData.value = value;
 }
-
 </script>
 <template>
   <v-dialog
@@ -61,22 +55,19 @@ function onUpdateIcon(value: DialogIconInfo) {
       <header v-if="title" class="lmd__content-title">
         <v-container v-if="iconUse">
           <v-row>
-            {{title}}
+            {{ title }}
             <v-spacer></v-spacer>
-            <v-icon v-bind="icon"></v-icon>
+            <v-icon :color="iconData.color" :icon="iconData.icon"></v-icon>
           </v-row>
         </v-container>
         <v-container v-else>
-          {{title}}
+          {{ title }}
         </v-container>
       </header>
 
       <!-- ボディ -->
       <main>
-        <slot
-          :on-close="close"
-          :on-update-icon="onUpdateIcon"
-        ></slot>
+        <slot :on-close="close" :on-update-icon="onUpdateIcon"></slot>
       </main>
     </div>
   </v-dialog>
@@ -94,5 +85,4 @@ function onUpdateIcon(value: DialogIconInfo) {
   font-size: 1.3rem;
   padding: 10px;
 }
-
 </style>

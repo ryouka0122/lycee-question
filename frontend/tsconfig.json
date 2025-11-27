@@ -3,6 +3,8 @@
 
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2021", "DOM"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
@@ -13,8 +15,7 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "env.d.ts",
-    "src/types/**/*.d.ts"
+    "env.d.ts"
   ],
 
   "references": [

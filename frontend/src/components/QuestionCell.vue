@@ -4,17 +4,18 @@
     <v-expansion-panel-title disable-icon-rotate>
       <!-- タイトルと期限 -->
       <v-row justify="space-between">
-        <v-col class="text-left">{{title}} / {{question.isMultiple ? "複数選択" : "単選択"}}</v-col>
-        <v-col
-class="text-right"
-               style="padding-right: 30px"
-        >{{ printDeadline(question.closeTime) }}</v-col>
+        <v-col class="text-left"
+          >{{ title }} /
+          {{ question.isMultiple ? "複数選択" : "単選択" }}</v-col
+        >
+        <v-col class="text-right" style="padding-right: 30px">{{
+          printDeadline(question.closeTime)
+        }}</v-col>
       </v-row>
 
       <!-- 状態アイコン -->
       <template #actions>
-        <v-icon v-bind="questionIcon">
-        </v-icon>
+        <v-icon :icon="questionIcon.icon" :color="questionIcon.color"> </v-icon>
       </template>
     </v-expansion-panel-title>
 
@@ -24,19 +25,16 @@ class="text-right"
         <!-- 質問文 -->
         <v-col>
           <div style="white-space: pre-line">
-            {{question.content}}
+            {{ question.content }}
           </div>
         </v-col>
       </v-row>
       <v-container>
-        <v-row
-          v-for="ans in question.answers"
-          :key="ans.answerId"
-        >
+        <v-row v-for="ans in question.answers" :key="ans.id">
           <v-checkbox
             v-model="selectedIndexes"
             :label="ans.description"
-            :value="ans.answerId"
+            :value="ans.id"
             :disabled="disableSelect"
             :multiple="question.isMultiple"
             hide-details
@@ -45,40 +43,49 @@ class="text-right"
       </v-container>
 
       <!-- 送信ボタン -->
-      <v-btn
-        class="qc--send_button"
-        v-bind="buttonState"
-        @click="onSend"
-      >{{buttonText}}</v-btn>
+      <v-btn class="qc--send_button" v-bind="buttonState" @click="onSend">{{
+        buttonText
+      }}</v-btn>
     </v-expansion-panel-text>
-
   </v-expansion-panel>
 </template>
 
 <script setup lang="ts">
-import { QuestionEntity } from '@/entity/QuestionEntity'
-import {computed, onMounted, ref} from "vue";
-import { formatDate } from "@/utils"
+import type { QuestionEntity } from "@/types/QuestionEntity.ts";
+import { computed, onMounted, ref } from "vue";
+import { formatDate } from "@/utils.ts";
+import type { AnswerId, QuestionId } from "@/types/common.ts";
 
 defineOptions({
   name: "QuestionCell",
-})
+});
 
-const emit = defineEmits("send")
+export type QuestionCellSubmitPayload = {
+  questionId: QuestionId;
+  answers: AnswerId[];
+};
+const emit = defineEmits<{
+  (e: "submit", payload: QuestionCellSubmitPayload): void;
+}>();
 
-const props = defineProps<{
-  title: string,
-  question: QuestionEntity,
-  history: number[]|number
-}>()
+const props = withDefaults(
+  defineProps<{
+    title: string;
+    question: QuestionEntity;
+    history?: string[];
+  }>(),
+  {
+    history: () => [],
+  },
+);
 
-const currentTime = ref(new Date())
-const isClosed = ref(true)
-const selectedIndexes = ref<number[] | number>([])
+const currentTime = ref(new Date());
+const isClosed = ref(true);
+const selectedIndexes = ref<AnswerId[] | AnswerId>([]);
 
 const disableSelect = computed(() => {
-  return isClosed.value || props.history.length > 0
-})
+  return isClosed.value || props.history.length > 0;
+});
 
 // const optionState = computed(() => {
 //   return {
@@ -86,68 +93,78 @@ const disableSelect = computed(() => {
 //   }
 // })
 
-const buttonState = computed(() => {
+const buttonState = computed<{
+  disabled: boolean;
+  variant: "outlined";
+  color: "primary" | "";
+}>(() => {
   return {
     disabled: disableSelect.value,
     variant: "outlined",
-    color: disableSelect.value ? "" : "primary"
-  }
-})
+    color: disableSelect.value ? "" : "primary",
+  };
+});
 
 const buttonText = computed(() => {
-  return isClosed.value ? "終了" : (props.history.length > 0 ? "回答済み" : "送信")
-})
+  return isClosed.value
+    ? "終了"
+    : props.history.length > 0
+      ? "回答済み"
+      : "送信";
+});
 
 const questionIcon = computed(() => {
   if (isClosed.value) {
     // 期限切れ
     return {
-      color:"red",
-      icon: "mdi-check-bold"
-    }
+      color: "red",
+      icon: "mdi-check-bold",
+    };
   } else if (props.history.length > 0) {
     // 期限内回答済み
     return {
       color: "light-blue darken-3",
-      icon: "mdi-checkbox-marked-circle-outline"
-    }
+      icon: "mdi-checkbox-marked-circle-outline",
+    };
   } else {
     // 期限内未回答
     return {
       color: "green",
-      icon: "mdi-clock-time-three-outline"
-    }
+      icon: "mdi-clock-time-three-outline",
+    };
   }
-})
+});
 
 onMounted(() => {
-  isClosed.value = (props.question.closeTime < currentTime.value)
+  isClosed.value = props.question.closeTime < currentTime.value;
 
   if (props.history) {
     // TODO selectedIndexesの使い方が気持ち悪い
     if (props.question.isMultiple) {
-      selectedIndexes.value = props.history
+      selectedIndexes.value = props.history;
     } else {
-      selectedIndexes.value = props.history[0]
+      selectedIndexes.value = props.history[0] || "";
     }
   }
-})
+});
 
 function printDeadline(closeTime: Date) {
   if (isClosed.value) {
-    return "終了"
+    return "終了";
   }
-  return formatDate(closeTime, "期日：MM/DD hh:mm")
+  return formatDate(closeTime, "期日：MM/DD hh:mm");
 }
 
 function onSend() {
-  const answers = selectedIndexes.value.isArray ? selectedIndexes.value : [selectedIndexes.value]
-  emit("send", {
+  const answers = Array.isArray(selectedIndexes.value)
+    ? selectedIndexes.value
+    : [selectedIndexes.value];
+  console.log("**submit**", answers);
+  emit("submit", {
     questionId: props.question.id,
-    answers
-  })
+    answers,
+  });
 }
-
 </script>
 
 <style scoped>
