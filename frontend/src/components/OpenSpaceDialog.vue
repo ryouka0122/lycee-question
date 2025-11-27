@@ -1,6 +1,7 @@
 <template>
   <div class="osd__content">
-    <!--
+    <v-form v-model="form">
+      <!--
     <v-file-input
       ref="fileInput"
       v-model="selectedFile"
@@ -32,16 +33,17 @@
       </template>
     </v-img>
     -->
-    <v-text-field
-      v-model="spaceName"
-      style="padding-top: 10px"
-      label="スペース名"
-      variant="outlined"
-    >
-    </v-text-field>
+      <v-text-field
+        v-model="spaceName"
+        style="padding-top: 10px"
+        label="スペース名"
+        variant="outlined"
+        :rules="space.nameRules()"
+      >
+      </v-text-field>
 
-    <div>スペースの有効期限は3日間です</div>
-
+      <div>スペースの有効期限は3日間です</div>
+    </v-form>
     <div class="osd__actions">
       <v-container>
         <v-row>
@@ -53,7 +55,9 @@
             @click="onClickClose"
             >閉じる</v-btn
           >
-          <v-btn color="blue" @click="onClick">新規登録</v-btn>
+          <v-btn :disabled="!form" color="blue" @click="onClick"
+            >新規登録</v-btn
+          >
         </v-row>
       </v-container>
     </div>
@@ -65,6 +69,7 @@ import { getUserId, getCurrentDate } from "@/utils.ts";
 import { SpaceClient } from "@/clients/api/SpaceClient.ts";
 import { onMounted, type Ref, ref } from "vue";
 import type { UserId } from "@/types/common.ts";
+import { space } from "@/rules/common";
 
 defineOptions({
   name: "OpenSpaceDialog",
@@ -72,6 +77,7 @@ defineOptions({
 
 const emit = defineEmits(["close"]);
 
+const form = ref(false);
 const spaceName = ref("");
 const endTime = ref(new Date());
 let spaceClient!: Ref<SpaceClient>;
