@@ -14,6 +14,8 @@ export class SpaceEntity {
   closeDate: Date;
   // スペース画像（予約）
   img?: string;
+  // 概要（予約）
+  description?: string;
 
   constructor(
     id: SpaceId,
@@ -32,6 +34,12 @@ export class SpaceEntity {
   }
 
   static from({ id, ownerId, name, openedTime, closeTime }: SpaceInfo) {
-    return new SpaceEntity(id, ownerId, name, openedTime, closeTime);
+    return new SpaceEntity(
+      id,
+      ownerId,
+      name,
+      new Date(openedTime),
+      new Date(closeTime),
+    );
   }
 }

@@ -22,15 +22,15 @@ export type SpaceGetOneResponse = {
   id: SpaceId;
   ownerId: UserId;
   name: string;
-  openedTime: Date;
-  closeTime: Date;
+  openedTime: string;
+  closeTime: string;
 };
 export type SpaceInfo = {
   id: SpaceId;
   ownerId: UserId;
   name: string;
-  openedTime: Date;
-  closeTime: Date;
+  openedTime: string;
+  closeTime: string;
 };
 
 export type SpaceGetListResponse = {

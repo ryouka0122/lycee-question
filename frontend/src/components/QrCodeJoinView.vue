@@ -32,12 +32,13 @@ onMounted(() => {
     userId.value = id;
     spaceClient.value = new SpaceClient(userId.value);
 
-    if (route.query.key) {
-      spaceClient.value.join(route.query.key).then((result) => {
-        if (result.status !== 200) {
-          isError.value = true;
-        } else {
+    const keyValue = validateQueryKey();
+    if (keyValue) {
+      spaceClient.value.join(keyValue).then((result) => {
+        if (result.ok) {
           isComplete.value = true;
+        } else {
+          isError.value = true;
         }
       });
     } else {
@@ -45,6 +46,13 @@ onMounted(() => {
     }
   });
 });
+
+function validateQueryKey(): string | undefined {
+  if (Array.isArray(route.query.key)) {
+    return undefined;
+  }
+  return route.query.key ?? undefined;
+}
 </script>
 
 <style scoped></style>

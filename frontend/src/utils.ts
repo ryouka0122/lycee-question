@@ -2,8 +2,8 @@ import { LOCAL_STORAGE_KEY } from "@/constants";
 
 import { UserClient } from "@/clients/api/UserClient";
 import { AppConfig } from "@/config/env";
-import type { UserGetResponse } from "./types/api.ts";
-import type { UserId } from "./types/common.ts";
+import type { Err, Result, UserId } from "./types/common.ts";
+import type { PublishIdResult } from "./clients/api/UserClient.ts";
 
 function getRealDate(): Date {
   return new Date();
@@ -21,6 +21,22 @@ export function getCurrentDate(): Date {
   return _getCurrentDate();
 }
 
+export function parseDate(n: unknown) {
+  let date!: Date;
+  if (typeof n === "string") {
+    date = new Date(n);
+  } else if (n instanceof Date) {
+    date = n;
+  } else {
+    return undefined;
+  }
+  return isNaN(date.getTime()) ? undefined : date;
+}
+
+export function showErrorMessage(e: Err) {
+  alert(`${e.message}\n(エラーコード：${e.errorCode})`);
+}
+
 export async function getUserId(): Promise<UserId> {
   const userId = localStorage.getItem(LOCAL_STORAGE_KEY.USER_ID);
   if (userId && userId !== "undefined") {
@@ -28,12 +44,14 @@ export async function getUserId(): Promise<UserId> {
   }
 
   const client = new UserClient();
-  const response: UserGetResponse = await client.publishId().then((result) => {
-    return result.data;
-  });
+  const result: Result<PublishIdResult> = await client.publishId();
 
-  localStorage.setItem(LOCAL_STORAGE_KEY.USER_ID, response.userId);
-  return response.userId;
+  if (!result.ok) {
+    alert("APIエラーが発生しました．");
+    throw new Error("APIエラー");
+  }
+  localStorage.setItem(LOCAL_STORAGE_KEY.USER_ID, result.data.userId);
+  return result.data.userId;
 }
 
 export function formatDate(

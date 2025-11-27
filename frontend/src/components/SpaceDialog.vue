@@ -13,7 +13,7 @@
               :key="question.id"
               :title="index + 1 + 'つ目の質問'"
               :question="question"
-              :history="history[question.id] || {}"
+              :history="ownerHistory[question.id] || {}"
             ></question-result-cell>
             <question-register-cell
               ref="registerCell"
@@ -28,7 +28,7 @@
               :title="index + 1 + 'つ目の質問'"
               :question="question"
               :history="history[question.id]"
-              @send="onSubmit"
+              @submit="onSubmit"
             ></question-cell>
           </template>
         </v-expansion-panels>
@@ -72,13 +72,17 @@
 
 <script setup lang="ts">
 import { QUESTION_TYPE } from "@/constants.ts";
-import { getUserId } from "@/utils.ts";
+import { getUserId, showErrorMessage } from "@/utils.ts";
 import { SpaceClient } from "@/clients/api/SpaceClient.ts";
 import { QuestionClient } from "@/clients/api/QuestionClient.ts";
-import { QuestionEntity } from "@/types/QuestionEntity.ts";
+import type { QuestionEntity } from "@/types/QuestionEntity.ts";
 import { AnswerClient } from "@/clients/api/AnswerClient.ts";
-import QuestionCell from "@/components/QuestionCell.vue";
-import QuestionRegisterCell from "@/components/QuestionRegisterCell.vue";
+import QuestionCell, {
+  type QuestionCellSubmitPayload,
+} from "@/components/QuestionCell.vue";
+import QuestionRegisterCell, {
+  type QuestionRegisterPayload,
+} from "@/components/QuestionRegisterCell.vue";
 import QuestionResultCell from "@/components/QuestionResultCell.vue";
 import QrcodeDialog from "@/components/QrcodeDialog.vue";
 import LyceeMessageDialog from "@/components/common/LyceeMessageDialog.vue";
@@ -91,14 +95,21 @@ import {
   useTemplateRef,
   watch,
 } from "vue";
+import type { SpaceEntity } from "@/types/SpaceEntity.ts";
+import type { AnswerId, QuestionId, Result } from "@/types/common.ts";
+import type { ShowDialogType } from "@/App.vue";
+import type { DialogIconInfo } from "@/components/common/dialog/LyceeModalDialog.vue";
 
 defineOptions({
   name: "SpaceDialog",
 });
 
-const showDialog = inject("showDialog");
+const showDialog = inject<ShowDialogType>("showDialog")!;
 
-const emit = defineEmits(["close", "update-icon"]);
+const emit = defineEmits<{
+  (e: "close"): void;
+  (e: "update-icon", icon: DialogIconInfo): void;
+}>();
 
 const props = defineProps<{
   spaceId: string;
@@ -108,11 +119,16 @@ const props = defineProps<{
 const userId = ref<string>("");
 
 /* スペース情報 */
-const space = ref<object | null>(null);
+const space = ref<SpaceEntity | null>(null);
 
 /* 質問 */
 const questions = ref<QuestionEntity[]>([]);
-const history = ref<object>([]);
+
+type AnswerHistoryType = Record<QuestionId, AnswerId[]>;
+const history = ref<AnswerHistoryType>({});
+
+type OwnerHistoryType = Record<QuestionId, Record<AnswerId, number>>;
+const ownerHistory = ref<OwnerHistoryType>({});
 
 /* 登録パネル */
 const isOwner = ref(false);
@@ -139,8 +155,8 @@ onMounted(() => {
     // 各種設定の初期化
     userId.value = it;
     spaceClient = new SpaceClient(userId.value);
-    questionClient = new SpaceClient(userId.value, props.spaceId);
-    answerClient = new SpaceClient(userId.value, props.spaceId);
+    questionClient = new QuestionClient(userId.value, props.spaceId);
+    answerClient = new AnswerClient(userId.value, props.spaceId);
 
     reloadSpaceInfo();
 
@@ -179,12 +195,13 @@ onUnmounted(() => {
  * 再読み込み
  */
 function reloadSpaceInfo() {
-  spaceClient.readOne(props.spaceId).then((result) => {
-    if (result.status !== 200) {
+  spaceClient.readOne(props.spaceId).then((result: Result<SpaceEntity>) => {
+    if (!result.ok) {
+      showErrorMessage(result);
       return;
     }
     space.value = result.data;
-    isOwner.value = userId.value === space.value!.ownerId;
+    isOwner.value = userId.value === result.data.ownerId;
 
     reloadQuestions();
   });
@@ -201,42 +218,34 @@ function onLeave() {
 /**
  * 送信処理
  */
-function onSubmit(data) {
-  answerClient
-    .answer({
-      questionId: data.questionId,
-      answers: data.answers,
-    })
-    .then(() => {
-      reloadQuestions();
-    });
+function onSubmit(data: QuestionCellSubmitPayload) {
+  answerClient.answer(data.questionId, data.answers).then(() => {
+    reloadQuestions();
+  });
 }
 
-const registerCell = useTemplateRef("registerCell");
+type RegisterCellType = InstanceType<typeof QuestionRegisterCell>;
+const registerCell = useTemplateRef<RegisterCellType>("registerCell");
 /**
  * 質問の新規登録ボタン
  */
-function onRegister(data) {
+function onRegister(data: QuestionRegisterPayload) {
   const endDate = new Date();
 
   // TODO 回答期限の設定項目を追加する
   endDate.setHours(endDate.getHours() + 6);
 
   questionClient
-    .create({
-      type: QUESTION_TYPE.SINGLE,
-      endDate: endDate,
-      ...data,
-    })
+    .create(QUESTION_TYPE.SINGLE, data.description, data.answers, endDate)
     .then((result) => {
-      if (result.status !== 201) {
+      if (!result.ok) {
         return;
       }
 
       registerExpanded.value = false;
 
       reloadQuestions();
-      registerCell.reset();
+      registerCell.value?.reset();
     });
 }
 
@@ -270,30 +279,74 @@ function onLeaveSpace() {
 }
 
 function reloadQuestions() {
+  questionClient.readAll().then((resQuestions) => {
+    if (!resQuestions.ok) {
+      showErrorMessage(resQuestions);
+      return;
+    }
+
+    questions.value = resQuestions.data;
+
+    if (isOwner.value) {
+      // 開設者のとき
+      answerClient.summaryInSpace(props.spaceId).then((resSummary) => {
+        if (!resSummary.ok) {
+          showErrorMessage(resSummary);
+          return;
+        }
+        const hist: OwnerHistoryType = {};
+
+        for (const e of resSummary.data) {
+          hist[e.questionId] = e.answers;
+        }
+        ownerHistory.value = hist;
+      });
+    } else {
+      // 回答者のとき
+      answerClient.readAllInSpace().then((resAnswer) => {
+        if (!resAnswer.ok) {
+          showErrorMessage(resAnswer);
+          return;
+        }
+
+        const hist: Record<QuestionId, AnswerId[]> = {};
+        for (const e of resAnswer.data) {
+          hist[e.questionId] = e.answers;
+        }
+
+        history.value = hist;
+      });
+    }
+  });
+}
+
+/*
+function reloadQuestions1() {
   const answerPromise = isOwner.value
     ? answerClient.summaryInSpace(props.spaceId)
     : answerClient.readAllInSpace();
 
   Promise.all([questionClient.readAll(), answerPromise]).then((resultAll) => {
     const [resQuestions, resAnswers] = resultAll;
-    questions.value = resQuestions.data.questions.map((it) => {
-      return new QuestionEntity(
-        it.questionId,
-        it.type,
-        it.description,
-        it.answers,
-        /* isMultiple(仮置き) */ it.type === QUESTION_TYPE.MULTIPLE,
-        Date.parse(it.endTime),
-      );
-    });
+    if (!resQuestions.ok) {
+      showErrorMessage(resQuestions);
+      return;
+    }
+    if (!resAnswers.ok) {
+      showErrorMessage(resAnswers);
+      return;
+    }
 
-    const hist: Record<string, any> = {};
-    for (const ans of resAnswers.data.history) {
+    questions.value = resQuestions.data;
+
+    type QuestionHistoryType = AnswerId[] | Record<AnswerId, number>;
+    const hist: Record<QuestionId, QuestionHistoryType> = {};
+    for (const ans of resAnswers.data) {
       hist[ans.questionId] = ans.answers;
     }
     history.value = hist;
   });
-}
+}*/
 
 /**
  * QR表示ボタン
@@ -327,6 +380,7 @@ function updateConnectionIcon() {
 
   const icon = icons[connectionStatus.value];
 
+  console.log("update connection icon:", icon);
   emit("update-icon", icon);
 }
 </script>

@@ -4,6 +4,7 @@ import { ApiClient } from "@/clients/api/base/api_client";
 import type {
   AnswerId,
   QuestionId,
+  Result,
   SpaceId,
   UserId,
 } from "../../types/common.ts";
@@ -12,6 +13,10 @@ import type {
   AnswerSummaryResponse,
 } from "../../types/api.ts";
 import type { AxiosResponse } from "axios";
+import type {
+  AnswerResultEntity,
+  AnswerSummaryEntity,
+} from "../../types/AnswerHistoryEntity.ts";
 
 export class AnswerClient {
   base_endpoint = "/answer";
@@ -29,22 +34,61 @@ export class AnswerClient {
     this.spaceId = spaceId;
   }
 
-  async readAllInSpace(): Promise<AxiosResponse<AnswerAllGetResponse>> {
-    return this.client.get(
-      this.base_endpoint + "/all",
-      {},
-      this.createHeader(),
-    );
+  async readAllInSpace(): Promise<Result<AnswerResultEntity[]>> {
+    return this.client
+      .get<
+        AnswerAllGetResponse,
+        object
+      >(this.base_endpoint + "/all", {}, this.createHeader())
+      .then((response) => {
+        if (response.status !== 200) {
+          return {
+            ok: false,
+            errorCode: "E-A999",
+            message: "Fail fetch question information",
+          };
+        }
+        const resultList = response.data.history.map((e) => {
+          return {
+            userId: e.userId,
+            questionId: e.questionId,
+            answers: e.answers,
+          } as AnswerResultEntity;
+        });
+        return {
+          ok: true,
+          data: resultList,
+        };
+      });
   }
 
   async summaryInSpace(
     spaceId: SpaceId,
-  ): Promise<AxiosResponse<AnswerSummaryResponse>> {
-    return this.client.get(
-      this.base_endpoint + `/summary/${spaceId}`,
-      {},
-      this.createHeader(),
-    );
+  ): Promise<Result<AnswerSummaryEntity[]>> {
+    return this.client
+      .get<
+        AnswerSummaryResponse,
+        object
+      >(this.base_endpoint + `/summary/${spaceId}`, {}, this.createHeader())
+      .then((response) => {
+        if (response.status !== 200) {
+          return {
+            ok: false,
+            errorCode: "E-A999",
+            message: "Fail fetch question information",
+          };
+        }
+        const summaryList = response.data.history.map((e) => {
+          return {
+            questionId: e.questionId,
+            answers: e.answers,
+          } as AnswerSummaryEntity;
+        });
+        return {
+          ok: true,
+          data: summaryList,
+        };
+      });
   }
 
   async answer(

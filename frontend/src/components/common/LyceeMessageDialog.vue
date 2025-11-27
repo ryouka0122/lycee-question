@@ -1,32 +1,47 @@
 <script setup lang="ts">
 defineOptions({
   name: "LyceeMessageDialog",
-})
+});
 
-const emit = defineEmits(["close"])
+const emit = defineEmits(["close"]);
 
 type ButtonParam = {
-  id: string
-  text: string
-  color: string
-  variant:  "elevated" | "flat" | "outlined" | "plain" | "text" | "tonal" | undefined
-  click: (target: string) => boolean
-}
+  id?: string;
+  text: string;
+  color: string;
+  variant?: "elevated" | "flat" | "outlined" | "plain" | "text" | "tonal";
+  click?: (target: string) => boolean;
+};
 
-defineProps<{
-  message: string,
-  buttons: ButtonParam[]
-}>();
+withDefaults(
+  defineProps<{
+    message: string;
+    buttons?: ButtonParam[];
+  }>(),
+  {
+    buttons: () => [
+      {
+        id: "OK",
+        text: "OK",
+        color: "blue",
+        variant: "outlined",
+        click: () => true,
+      },
+    ],
+  },
+);
 
 function onButtonClick(target: ButtonParam, e: MouseEvent) {
-  const callback = target.click || function () {return true}
-  const message = target.id || target.text
-  const isCanceled = !callback(message)
+  const message = target.id || target.text;
+  let isCanceled = false;
+  if (target.click) {
+    isCanceled = !target.click(message);
+  }
 
   if (isCanceled) {
-    e.preventDefault()
+    e.preventDefault();
   } else {
-    emit("close", message)
+    emit("close", message);
   }
 }
 </script>
@@ -34,7 +49,7 @@ function onButtonClick(target: ButtonParam, e: MouseEvent) {
   <div class="dialog__content">
     <!-- メッセージ領域 -->
     <div class="dialog__message">
-      {{message}}
+      {{ message }}
     </div>
     <!-- アクション領域 -->
     <div class="dialog__actions">
@@ -49,7 +64,7 @@ function onButtonClick(target: ButtonParam, e: MouseEvent) {
             :color="button.color"
             @click="onButtonClick(button, $event)"
           >
-            {{button.text}}
+            {{ button.text }}
           </v-btn>
         </v-row>
       </v-container>
@@ -72,5 +87,4 @@ function onButtonClick(target: ButtonParam, e: MouseEvent) {
 .dialog__button {
   margin-left: 10px;
 }
-
 </style>

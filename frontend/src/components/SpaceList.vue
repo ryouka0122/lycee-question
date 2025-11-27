@@ -21,43 +21,43 @@ import { SpaceEntity } from "@/types/SpaceEntity";
 import OpenSpaceDialog from "@/components/OpenSpaceDialog.vue";
 import SpaceDialog from "@/components/SpaceDialog.vue";
 import { SpaceClient } from "@/clients/api/SpaceClient.ts";
-import { getUserId } from "@/utils.ts";
+import { getUserId, showErrorMessage } from "@/utils.ts";
 import { inject, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import LyceeMessageDialog from "@/components/common/LyceeMessageDialog.vue";
+import type { UserId } from "@/types/common.ts";
+import type { ShowDialogType } from "@/App.vue";
 
 defineOptions({
   name: "SpaceList",
 });
 
-const showDialog = inject("showDialog");
+const showDialog = inject<ShowDialogType>("showDialog")!;
 
 const spaceList = ref<SpaceEntity[]>([]);
 
 let spaceClient!: SpaceClient;
 
 onMounted(() => {
-  getUserId().then((id: string) => {
+  getUserId().then((id: UserId) => {
     initialize(id);
   });
 });
 
-async function initialize(userId: string) {
+async function initialize(userId: UserId) {
   spaceClient = new SpaceClient(userId);
   await reloadSpaceList();
   await joinSpace();
 }
 
 async function reloadSpaceList() {
-  const result = await spaceClient.readAll();
-
-  if (result.status !== 200) {
-    return;
-  }
-  const list = [];
-  for (const s of result.data.spaces) {
-    list.push(SpaceEntity.from({ ...s }));
-  }
-  spaceList.value = list;
+  spaceClient.readAll().then((result) => {
+    if (!result.ok) {
+      showErrorMessage(result);
+      return;
+    }
+    spaceList.value = result.data;
+  });
 }
 
 const route = useRoute();
@@ -67,31 +67,41 @@ const route = useRoute();
  */
 async function joinSpace() {
   const spaceId = route.query.key;
-  if (!spaceId) return;
+  if (!spaceId || typeof spaceId !== "string") return;
 
-  if (spaceList.value.some((s) => s.spaceId === spaceId)) {
+  if (spaceList.value.some((s) => s.id === spaceId)) {
     // 参加済みの場合は何もしない
     return;
   }
 
   // 参加処理
   const result = await spaceClient.join(spaceId);
-  if (result.status === 204) return;
+  if (!result.ok) {
+    showErrorMessage(result);
+    return;
+  }
+
+  if (result.data === "AlreadyJoined") {
+    return;
+  }
 
   let message!: string;
-  if (result.status === 200) {
-    message = "スペースに参加できるようになりました";
-  } else {
-    message = "エラーが発生しました";
+  switch (result.data) {
+    case "Joined":
+      message = "スペースに参加できるようになりました";
+      break;
+    case "Closed":
+    default:
+      message = "エラーが発生しました";
   }
 
   showDialog({
-    dialog: LyceeMessagedialog,
+    dialog: LyceeMessageDialog,
     props: {
       message,
     },
   }).then((selected) => {
-    if (result.status === 200 && selected === "OK") {
+    if (result.data === "Joined" && selected === "OK") {
       reloadSpaceList();
     }
   });
