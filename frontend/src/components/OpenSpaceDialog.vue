@@ -42,7 +42,13 @@
       >
       </v-text-field>
 
-      <div>スペースの有効期限は3日間です</div>
+      <v-date-input
+        v-model="closeDate"
+        label="有効期限"
+        variant="outlined"
+        :rules="space.closeDateRules()"
+        :allowed-dates="checkAllowedDates"
+      ></v-date-input>
     </v-form>
     <div class="osd__actions">
       <v-container>
@@ -67,9 +73,11 @@
 <script setup lang="ts">
 import { getUserId, getCurrentDate } from "@/utils.ts";
 import { SpaceClient } from "@/clients/api/SpaceClient.ts";
-import { onMounted, type Ref, ref } from "vue";
+import { onMounted, ref } from "vue";
 import type { UserId } from "@/types/common.ts";
 import { space } from "@/rules/common";
+import { VDateInput } from "vuetify/labs/VDateInput";
+import { SPACE_OPEN_MINIMUM_SPAN } from "@/constants.ts";
 
 defineOptions({
   name: "OpenSpaceDialog",
@@ -77,17 +85,24 @@ defineOptions({
 
 const emit = defineEmits(["close"]);
 
+const currentDate = getCurrentDate();
+const allowBaseDate = addDate(currentDate, SPACE_OPEN_MINIMUM_SPAN);
+
 const form = ref(false);
 const spaceName = ref("");
-const endTime = ref(new Date());
-let spaceClient!: Ref<SpaceClient>;
+const closeDate = ref(allowBaseDate);
+
+let spaceClient!: SpaceClient;
+
+function addDate(base: Date, diff: number): Date {
+  const newDate = new Date(base.getTime());
+  newDate.setDate(newDate.getDate() + diff);
+  return newDate;
+}
 
 onMounted(() => {
-  const startTime = new Date();
-  endTime.value = new Date(new Date().setTime(startTime.getTime() + 3));
-
   getUserId().then((userId: UserId) => {
-    spaceClient = ref(new SpaceClient(userId));
+    spaceClient = new SpaceClient(userId);
   });
 });
 
@@ -96,10 +111,7 @@ function onClickClose() {
 }
 
 function onClick() {
-  const closeDate = getCurrentDate();
-  closeDate.setDate(closeDate.getDate() + 3);
-
-  spaceClient.value.create(spaceName.value, closeDate).then((result) => {
+  spaceClient.create(spaceName.value, closeDate.value).then((result) => {
     if (result.ok) {
       emit("close", true);
     } else {
@@ -107,6 +119,13 @@ function onClick() {
       alert(`${result.message} (${result.errorCode})`);
     }
   });
+}
+
+function checkAllowedDates(date: unknown): boolean {
+  if (date instanceof Date) {
+    return date >= allowBaseDate;
+  }
+  return false;
 }
 </script>
 <style scoped>
