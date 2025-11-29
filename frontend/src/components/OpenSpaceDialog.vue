@@ -1,6 +1,7 @@
 <template>
   <div class="osd__content">
-    <!--
+    <v-form v-model="form">
+      <!--
     <v-file-input
       ref="fileInput"
       v-model="selectedFile"
@@ -32,16 +33,31 @@
       </template>
     </v-img>
     -->
-    <v-text-field
-      v-model="spaceName"
-      style="padding-top: 10px"
-      label="スペース名"
-      variant="outlined"
-    >
-    </v-text-field>
+      <v-text-field
+        v-model="spaceName"
+        style="padding-top: 10px"
+        label="スペース名"
+        variant="outlined"
+        :rules="space.nameRules()"
+      >
+      </v-text-field>
 
-    <div>スペースの有効期限は3日間です</div>
-
+<!--      <v-date-input-->
+<!--        v-model="closeDate"-->
+<!--        label="有効期限"-->
+<!--        variant="outlined"-->
+<!--        :rules="space.closeDateRules()"-->
+<!--        :allowed-dates="checkAllowedDates"-->
+<!--      ></v-date-input>-->
+      <vue-date-picker
+        v-model="closeDate"
+        placeholder="有効期限"
+        time-config="{enableTimePicker: false}"
+        :formats="datePickerFormats"
+        :min-date="allowBaseDate"
+      >
+      </vue-date-picker>
+    </v-form>
     <div class="osd__actions">
       <v-container>
         <v-row>
@@ -53,7 +69,9 @@
             @click="onClickClose"
             >閉じる</v-btn
           >
-          <v-btn color="blue" @click="onClick">新規登録</v-btn>
+          <v-btn :disabled="!form" color="blue" @click="onClick"
+            >新規登録</v-btn
+          >
         </v-row>
       </v-container>
     </div>
@@ -63,25 +81,40 @@
 <script setup lang="ts">
 import { getUserId, getCurrentDate } from "@/utils.ts";
 import { SpaceClient } from "@/clients/api/SpaceClient.ts";
-import { onMounted, type Ref, ref } from "vue";
+import { onMounted, ref } from "vue";
 import type { UserId } from "@/types/common.ts";
+import { space } from "@/rules/common";
+import { SPACE_OPEN_MINIMUM_SPAN } from "@/constants.ts";
 
 defineOptions({
   name: "OpenSpaceDialog",
 });
 
+const datePickerFormats = {
+  input: "yyyy/MM/dd",
+  preview: "yyyy/MM/dd",
+};
+
 const emit = defineEmits(["close"]);
 
+const currentDate = getCurrentDate();
+const allowBaseDate = addDate(currentDate, SPACE_OPEN_MINIMUM_SPAN);
+
+const form = ref(false);
 const spaceName = ref("");
-const endTime = ref(new Date());
-let spaceClient!: Ref<SpaceClient>;
+const closeDate = ref(allowBaseDate);
+
+let spaceClient!: SpaceClient;
+
+function addDate(base: Date, diff: number): Date {
+  const newDate = new Date(base.getTime());
+  newDate.setDate(newDate.getDate() + diff);
+  return newDate;
+}
 
 onMounted(() => {
-  const startTime = new Date();
-  endTime.value = new Date(new Date().setTime(startTime.getTime() + 3));
-
   getUserId().then((userId: UserId) => {
-    spaceClient = ref(new SpaceClient(userId));
+    spaceClient = new SpaceClient(userId);
   });
 });
 
@@ -90,10 +123,7 @@ function onClickClose() {
 }
 
 function onClick() {
-  const closeDate = getCurrentDate();
-  closeDate.setDate(closeDate.getDate() + 3);
-
-  spaceClient.value.create(spaceName.value, closeDate).then((result) => {
+  spaceClient.create(spaceName.value, closeDate.value).then((result) => {
     if (result.ok) {
       emit("close", true);
     } else {
@@ -102,6 +132,7 @@ function onClick() {
     }
   });
 }
+
 </script>
 <style scoped>
 .osd__content {

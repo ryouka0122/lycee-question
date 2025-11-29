@@ -18,6 +18,7 @@
             <question-register-cell
               ref="registerCell"
               v-model="registerExpanded"
+              :space-close-date="space?.closeDate"
               @register="onRegister"
             ></question-register-cell>
           </template>
