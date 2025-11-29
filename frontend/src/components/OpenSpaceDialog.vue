@@ -42,13 +42,21 @@
       >
       </v-text-field>
 
-      <v-date-input
+<!--      <v-date-input-->
+<!--        v-model="closeDate"-->
+<!--        label="有効期限"-->
+<!--        variant="outlined"-->
+<!--        :rules="space.closeDateRules()"-->
+<!--        :allowed-dates="checkAllowedDates"-->
+<!--      ></v-date-input>-->
+      <vue-date-picker
         v-model="closeDate"
-        label="有効期限"
-        variant="outlined"
-        :rules="space.closeDateRules()"
-        :allowed-dates="checkAllowedDates"
-      ></v-date-input>
+        placeholder="有効期限"
+        time-config="{enableTimePicker: false}"
+        :formats="datePickerFormats"
+        :min-date="allowBaseDate"
+      >
+      </vue-date-picker>
     </v-form>
     <div class="osd__actions">
       <v-container>
@@ -76,12 +84,16 @@ import { SpaceClient } from "@/clients/api/SpaceClient.ts";
 import { onMounted, ref } from "vue";
 import type { UserId } from "@/types/common.ts";
 import { space } from "@/rules/common";
-import { VDateInput } from "vuetify/labs/VDateInput";
 import { SPACE_OPEN_MINIMUM_SPAN } from "@/constants.ts";
 
 defineOptions({
   name: "OpenSpaceDialog",
 });
+
+const datePickerFormats = {
+  input: "yyyy/MM/dd",
+  preview: "yyyy/MM/dd",
+};
 
 const emit = defineEmits(["close"]);
 
@@ -121,12 +133,6 @@ function onClick() {
   });
 }
 
-function checkAllowedDates(date: unknown): boolean {
-  if (date instanceof Date) {
-    return date >= allowBaseDate;
-  }
-  return false;
-}
 </script>
 <style scoped>
 .osd__content {

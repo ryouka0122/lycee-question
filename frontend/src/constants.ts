@@ -21,3 +21,6 @@ export const GAUGE_COLOR = [
   "#9dfc9d",
   "#ff9dff",
 ];
+
+// スペース開設最小期間
+export const SPACE_OPEN_MINIMUM_SPAN = 4;
