@@ -47,3 +47,4 @@ logs/
 
 frontend/node_modules/
 frontend_vue/node_modules/
+frontend/tsconfig.tsbuildinfo
