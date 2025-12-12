@@ -1,0 +1,37 @@
+name: backend
+
+on:
+  push:
+    paths:
+      # 対象のファイルの指定
+      - "backend/**"
+      - ".github/workflows/backend-ci.yml"
+  pull_request: 
+    paths:
+      - "backend/**"
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # 基準となるディレクトリを指定
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+      - name: Setup build
+        run: chmod +x ./gradlew
+
+      # いったんテストは外す（後で-x testを外してテスト実行を含める）
+      - name: Build the Docker image
+        run: ./gradlew -x test clean build
+
+      # Renderにデプロイ
+      - name: Deploy Render
+        if: success()
+        run: curl -sSf -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
