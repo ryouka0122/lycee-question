@@ -18,8 +18,8 @@
     "env.d.ts"
   ],
 
-  "references": [
+//  "references": [
 //    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+//    { "path": "./tsconfig.node.json" }
+//  ]
 }
