@@ -1,0 +1,35 @@
+name: backend
+
+on:
+  push:
+    paths:
+      # 対象のファイルの指定
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+  pull_request: 
+    paths:
+      - "frontend/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # 基準となるディレクトリを指定
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Setup build
+        run: npm install
+
+      # ビルド検証
+      - name: Verify project
+        run: npm run build:${{secrets.APP_ENV}}
+
+      # Renderにデプロイ
+      - name: Deploy Render
+        if: success()
+        run: curl -sSf -X POST "${{secrets.RENDER_FRONTEND_DEPLOY_HOOK}}"

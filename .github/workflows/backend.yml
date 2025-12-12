@@ -5,7 +5,7 @@ on:
     paths:
       # 対象のファイルの指定
       - "backend/**"
-      - ".github/workflows/backend-ci.yml"
+      - ".github/workflows/backend.yml"
   pull_request: 
     paths:
       - "backend/**"
@@ -27,11 +27,11 @@ jobs:
       - name: Setup build
         run: chmod +x ./gradlew
 
-      # いったんテストは外す（後で-x testを外してテスト実行を含める）
-      - name: Build the Docker image
+      # ビルド検証（後で-x testを外してテスト実行を含める）
+      - name: Verify project
         run: ./gradlew -x test clean build
 
       # Renderにデプロイ
       - name: Deploy Render
         if: success()
-        run: curl -sSf -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+        run: curl -sSf -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
